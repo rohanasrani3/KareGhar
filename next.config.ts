@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
-const onVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV) || process.cwd().replace(/\\/g, "/").startsWith("/vercel/");
 const config: NextConfig = {
-  // Vercel expects the default .next output; locally, production builds stay apart from dev.
-  // Vercel builds in /vercel/path0; the cwd check covers projects that don't expose the VERCEL variable.
-  distDir: process.env.NODE_ENV === "production" && !onVercel ? ".next-production" : ".next",
+  // Hosts (Vercel, Render) build and serve from the default .next. A local production
+  // smoke test sets KAREGHAR_LOCAL=1 for both build and start, so it uses .next-production
+  // and never overwrites the assets of a running dev server.
+  distDir: process.env.NODE_ENV === "production" && process.env.KAREGHAR_LOCAL === "1" ? ".next-production" : ".next",
   serverExternalPackages: ["@node-rs/argon2", "postgres"],
   experimental: { serverActions: { bodySizeLimit: "6mb" } },
   poweredByHeader: false,
