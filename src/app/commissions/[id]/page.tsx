@@ -10,6 +10,18 @@ import { ProposalForm, ProposalPreview } from "@/components/proposal-form";
 import { PortfolioGallery } from "@/components/portfolio-gallery";
 import { OUTPUT_LABELS, deadlineDate, mediaUrl, rupees } from "@/lib/commission-display";
 import "@/components/commissions.css";
+import type { Metadata } from "next";
+
+// No viewer ID: only publicly visible demands (never in-progress or paused ones) are read.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const [c] = await commissions({}, id);
+  if (!c) return { title: "Demand not found" };
+  const title = `${c.title} | KareGhar`;
+  const description = c.brief.slice(0, 150);
+  // absolute: the layout's "%s · KareGhar" template would otherwise repeat the site name.
+  return { title: { absolute: title }, description, openGraph: { title, description, siteName: "KareGhar" } };
+}
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, user, { lang, t }, all] = await Promise.all([params, viewer(), language(), forms()]);
