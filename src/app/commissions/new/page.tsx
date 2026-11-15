@@ -13,7 +13,7 @@ export default async function Page() {
   if (!user) redirect("/login");
   if (user.role !== "customer") redirect("/commissions");
   return <div className="commission-workspace">
-    <Link className="back-link" href="/commissions">← {t("All commissions", "सभी कमीशन")}</Link>
+    <Link className="back-link" href="/commissions">{t("All commissions", "सभी कमीशन")}</Link>
     <header className="workspace-heading"><p className="meta">{t("A good project starts with a good brief", "अच्छे काम की शुरुआत स्पष्ट विवरण से होती है")}</p><h1>{t("What would you like made?", "आप क्या बनवाना चाहते हैं?")}</h1><p>{t("Give an artist the details they need to bring your idea to life.", "अपनी कल्पना को साकार करने के लिए कलाकार को ज़रूरी जानकारी दें।")}</p></header>
     <div className="commission-layout">
       <section className="workspace-panel">

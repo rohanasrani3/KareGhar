@@ -41,7 +41,7 @@ function PhotoEditor({ user, hi }: { user: ProfileData; hi: boolean }) {
     <div className="photo-editor-copy">
       <button type="button" className="text-button" onClick={() => input.current?.click()}>{hi ? "फ़ोटो बदलें" : user.photo || preview ? "Change photo" : "Add a photo"}</button>
       {(user.photo || preview) && !removed && <button type="button" className="text-button quiet-danger" onClick={() => { setRemoved(true); setPreview(""); if (input.current) input.current.value = ""; }}>{hi ? "हटाएँ" : "Remove"}</button>}
-      <small id={id + "-hint"}>{hi ? "JPG, PNG या WebP · अधिकतम 5 MB" : "JPG, PNG or WebP · up to 5 MB"}</small>
+      <small id={id + "-hint"}>{hi ? "JPG, PNG या WebP, अधिकतम 5 MB" : "JPG, PNG or WebP, up to 5 MB"}</small>
       {error && <small role="alert">{error}</small>}
     </div>
   </div>;
@@ -73,7 +73,7 @@ export function ProfileEditor({ user, links, lang }: { user: ProfileData; links:
         <fieldset className="social-fields"><legend>{hi ? "सोशल लिंक" : "Find you online"}</legend><div className="profile-form-grid">{SOCIALS.map((site) => <label key={site.key}><span className="social-field-label"><SocialIcon name={site.key} /> {site.label}</span><input name={"social_" + site.key} type="url" maxLength={2048} placeholder={"https://" + site.hosts[0] + "/"} defaultValue={links.find((link) => socialKey(link) === site.key) ?? ""} /></label>)}</div><input type="hidden" name="linksExtra" value={JSON.stringify(links.filter((link) => !socialKey(link)))} /></fieldset>
       </fieldset>
     </ActionForm> : <>
-      <div className="profile-read-intro"><button type="button" className="profile-photo-shortcut" onClick={() => { setSaved(false); setEditing(true); }} aria-label={hi ? "प्रोफ़ाइल फ़ोटो बदलें" : "Change profile photo"}><ProfileAvatar name={user.name} photo={user.photo} /><span className="avatar-overlay" aria-hidden="true">✎</span></button><div><h3>{user.name}</h3><p>@{user.username}{user.company ? ` · ${user.company}` : ""}</p></div></div>
+      <div className="profile-read-intro"><button type="button" className="profile-photo-shortcut" onClick={() => { setSaved(false); setEditing(true); }} aria-label={hi ? "प्रोफ़ाइल फ़ोटो बदलें" : "Change profile photo"}><ProfileAvatar name={user.name} photo={user.photo} /><span className="avatar-overlay" aria-hidden="true">✎</span></button><div><h3>{user.name}</h3><p>@{user.username}{user.company ? `, ${user.company}` : ""}</p></div></div>
       <dl className="profile-details"><div><dt>{hi ? "परिचय" : "About me"}</dt><dd className="pre">{user.bio || (hi ? "अपने बारे में कुछ बताएँ — प्रोफ़ाइल संपादित करके शुरुआत करें।" : "Add a short introduction so people can get to know you.")}</dd></div><div><dt>{hi ? "सार्वजनिक संपर्क" : "Public contact"}</dt><dd>{user.contact || (hi ? "अभी साझा नहीं किया गया" : "Not shared yet")}</dd></div><div><dt>{hi ? "निजी ईमेल" : "Private account email"}</dt><dd>{user.email || "—"}</dd></div></dl>
       {links.length > 0 && <div className="profile-social-section"><h3>{hi ? "सोशल लिंक" : "Find me online"}</h3><SocialLinks links={links} /></div>}
     </>}

@@ -5,8 +5,7 @@ import Link from "next/link";
 export default async function Page() {
   const { t, lang } = await language();
   return (
-    <section className="auth-page">
-      <p className="eyebrow">{t("Make something together", "साथ मिलकर कुछ बनाएँ")}</p>
+    <section className="auth-page">
       <h1>{t("Create an account", "खाता बनाएँ")}</h1>
       <p>{t("Find your next collaborator. Artists can set up their portfolio after signing in.", "अपना अगला सहयोगी खोजें। कलाकार लॉग इन करने के बाद पोर्टफ़ोलियो बना सकते हैं।")}</p>
       <ActionForm

@@ -26,7 +26,7 @@ export default async function Page() {
             </p>
             <p>
               {a.suspended ? t("Suspended", "निलंबित") : t("Active", "सक्रिय")}{" "}
-              · {t("Open commissions", "खुले कमीशन")} {a.active}
+              , {t("Open commissions", "खुले कमीशन")} {a.active}
             </p>
           </article>
         ))}

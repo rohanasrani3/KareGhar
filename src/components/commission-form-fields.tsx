@@ -56,7 +56,7 @@ export function CommissionFormFields({ all, lang }: { all: Form[]; lang: "en" | 
       <div className="reference-upload">
         <label>{hi ? "संदर्भ चित्र" : "Reference image"} <span className="field-optional">{hi ? "वैकल्पिक" : "Optional"}</span>
           <input ref={reference} type="file" name="reference" accept="image/jpeg,image/png,image/webp" onChange={(e) => setPreview(e.target.files?.[0] ? URL.createObjectURL(e.target.files[0]) : "")} />
-          <span className="field-help">{hi ? "JPG, PNG या WebP · अधिकतम 5 MB। आपके सार्वजनिक अनुरोध पर दिखेगा।" : "JPG, PNG or WebP · up to 5 MB. Visible with your public brief."}</span>
+          <span className="field-help">{hi ? "JPG, PNG या WebP, अधिकतम 5 MB। आपके सार्वजनिक अनुरोध पर दिखेगा।" : "JPG, PNG or WebP, up to 5 MB. Visible with your public brief."}</span>
         </label>
         {preview && <div className="reference-preview"><Image src={preview} unoptimized width={500} height={300} alt={hi ? "संदर्भ का पूर्वावलोकन" : "Reference preview"} /><button className="pill" type="button" onClick={() => { setPreview(""); if (reference.current) reference.current.value = ""; }}>{hi ? "चित्र हटाएँ" : "Remove image"}</button></div>}
       </div>

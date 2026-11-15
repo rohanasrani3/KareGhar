@@ -1,6 +1,6 @@
 # KareGhar repository guidelines
 
-KareGhar connects customers commissioning work with artists. The tagline is “Empowering artisans. Enabling businesses”. Keep the existing warm paper, indigo and saffron palette. Use the server-side function index below before introducing new abstractions or queries. Update this file and docs/API.md in the same change as the corresponding contracts.
+KareGhar connects customers commissioning work with artists. The tagline is “Empowering artisans. Enabling businesses”. Keep the existing warm paper, indigo and saffron palette. The visual system is direction D, "Loom, photographed" (Hallmark redesign, stamped at the top of src/app/globals.css): Libre Caslon Display heads at 32px and up over Hanken Grotesk, Tiro Devanagari Hindi and Noto Sans Devanagari for Hindi, square corners, thin rules, no shadows, colours and fonts only through the @theme tokens, no tracked-capital labels or eyebrows, no middle-dot meta strings. Use the server-side function index below before introducing new abstractions or queries. Update this file and docs/API.md in the same change as the corresponding contracts.
 
 ## Product rules
 
@@ -31,8 +31,11 @@ Signatures below describe the callable application boundaries. UI page component
 | contract/artForms | CATEGORIES, ART_FORMS | Bilingual category labels and initial form records. Read the live catalogue via market.forms. |
 | server/db.query | SQL, bound scalar values → rows | Shared PostgreSQL/local SQLite access. Connect once per process. Initialize local schema and seed backend fixtures. PostgreSQL migrations run separately. |
 | server/samples.seedSamples | query function → void | Idempotently insert the sample catalogue (SAMPLE_ACCOUNTS, SAMPLE_WORKS, SAMPLE_COMMISSIONS): fictional customers and one artist per seed form, sample=1 with no password. Called by db on local SQLite, or on PostgreSQL only with KAREGHAR_SEED_SAMPLES=1. |
-| lib/sample-media.sampleCover | form ID → placeholder path or undefined | Cover art for sample commissions only. Never use it for real briefs. |
-| scripts/generate-sample-media.mjs | () → public/seed/forms/*.svg, *.wav | Regenerate the original placeholder artwork and tunes used by sample records. |
+| lib/sample-media.sampleCover | form ID → FORM_PHOTOS path or undefined | Cover photo for sample commissions only. Never use it for real briefs. |
+| scripts/generate-sample-media.mjs | () → public/seed/forms/*.svg, *.wav | Regenerate the placeholder tunes (and legacy SVG artwork) used by sample records. |
+| content/photos.PHOTOS, CATEGORY_PHOTOS | — | Real craft photographs from Wikimedia Commons in public/photos, with bilingual alt text, place and licence. They show real crafts, never KareGhar or sample artists' work. Every use must show a credit or link /credits. |
+| content/photos.FORM_PHOTOS | form ID → Photo | One freely licensed photo per seed form in public/photos/forms, showing the work (paintings, instruments, puppets, textiles), never people. Sample works are titled "Example photo: …" and sample covers use them; /credits lists every one. Artist tiles never fall back to a profile photo. |
+| components/PhotoCredit | photo, hi → credit line | Linked author and licence, as CC BY / BY-SA require. |
 | server/auth.authOptions | Credentials provider, JWT and session callbacks | Verify Argon2id, limit attempts per username, carry immutable account ID and password revision. |
 | server/auth.viewer | () → current Account or null | Check session identity and revision against the stored account on every protected operation. |
 | server/market.forms | () → Form[] | Read ordered live forms for both directories, posts and portfolio entry. |

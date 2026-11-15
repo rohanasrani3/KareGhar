@@ -9,8 +9,7 @@ export default async function Page({
   const { t, lang } = await language(),
     params = await searchParams;
   return (
-    <section className="auth-page">
-      <p className="eyebrow">{t("Welcome back", "फिर से स्वागत है")}</p>
+    <section className="auth-page">
       <h1>{t("Log in", "लॉग इन")}</h1>
       {params.created && (
         <p>

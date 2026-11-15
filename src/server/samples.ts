@@ -1,11 +1,14 @@
 import "server-only";
 import { sampleCover } from "@/lib/sample-media";
+import { FORM_PHOTOS, PHOTOS } from "@/content/photos";
 
 /**
  * Sample marketplace data. Only this trusted backend module designates
- * sample records (sample=1). Every person and business here is fictional, and
- * every image and tune under /public/seed is a generated placeholder
- * (scripts/generate-sample-media.mjs), not a real artist's work.
+ * sample records (sample=1). Every person and business here is fictional. Tunes under
+ * /public/seed are generated placeholders (scripts/generate-sample-media.mjs);
+ * images are real, credited Wikimedia Commons photos of each art form
+ * (src/content/photos.ts), titled "Example photo: …" because they are not
+ * the fictional artists' own work.
  *
  * Product rules (AGENTS.md): samples are marked "Sample data" on public pages,
  * are read-only, cannot sign in (empty password hash, login requires sample=0),
@@ -31,7 +34,6 @@ type SampleCommission = {
   artist?: string;
 };
 
-const art = (form: string) => `/seed/forms/${form}.svg`;
 const tune = (form: string) => `/seed/forms/${form}.wav`;
 
 export const SAMPLE_ACCOUNTS: SampleAccount[] = [
@@ -64,31 +66,39 @@ export const SAMPLE_ACCOUNTS: SampleAccount[] = [
   { id: "demo-chikankari", name: "Nazia Khan", role: "artist" },
 ];
 
+/**
+ * Portfolio works. Image works are real, credited photos of each art form's
+ * work (FORM_PHOTOS), titled "Example photo: …" so they never read as the
+ * fictional artist's own work. Music artists keep a generated placeholder tune.
+ */
+const example = (form: string) => `Example photo: ${FORM_PHOTOS[form].alt.en}`;
+const photoWork = (id: string, artist: string, form: string): SampleWork => ({ id, artist, form, title: example(form), url: FORM_PHOTOS[form].src });
+
 export const SAMPLE_WORKS: SampleWork[] = [
-  // Original three (kept for existing databases)
-  { id: "demo-wall", artist: "demo-artist", form: "warli", title: "Village celebration", url: "/seed/warli-final.svg" },
-  { id: "demo-textile", artist: "demo-blockprinter", form: "block-print", title: "Floral block print", url: "/seed/blockprint-sample.svg" },
-  { id: "demo-song", artist: "demo-musician", form: "marathi-folk", title: "Marathi folk jingle", url: "/seed/jingle-draft.wav" },
+  // Original three ids (kept so existing databases update in place)
+  photoWork("demo-wall", "demo-artist", "warli"),
+  photoWork("demo-textile", "demo-blockprinter", "block-print"),
+  { id: "demo-song", artist: "demo-musician", form: "marathi-folk", title: "Marathi folk jingle (placeholder tune)", url: "/seed/jingle-draft.wav" },
   // Additions
-  { id: "demo-wall-sketch", artist: "demo-artist", form: "warli", title: "Harvest dance layout sketch", url: "/seed/warli-sketch.svg" },
-  { id: "demo-madhubani-fish", artist: "demo-madhubani", form: "madhubani", title: "Twin fish and lotus", url: art("madhubani") },
-  { id: "demo-gond-tree", artist: "demo-gond", form: "gond", title: "Tree of life with deer", url: art("gond") },
-  { id: "demo-patta-temple", artist: "demo-pattachitra", form: "pattachitra", title: "Temple procession panel", url: art("pattachitra") },
-  { id: "demo-kalam-vines", artist: "demo-kalamkari", form: "kalamkari", title: "Indigo vine wall hanging", url: art("kalamkari") },
-  { id: "demo-folk-poster", artist: "demo-musician", form: "marathi-folk", title: "Dholki evening poster", url: art("marathi-folk") },
-  { id: "demo-baul-song", artist: "demo-baul", form: "baul", title: "Ektara melody", url: tune("baul") },
-  { id: "demo-baul-poster", artist: "demo-baul", form: "baul", title: "Baul gathering poster", url: art("baul") },
-  { id: "demo-raag", artist: "demo-hindustani", form: "hindustani", title: "Evening raag excerpt", url: tune("hindustani") },
-  { id: "demo-raag-poster", artist: "demo-hindustani", form: "hindustani", title: "Baithak concert poster", url: art("hindustani") },
-  { id: "demo-varnam", artist: "demo-carnatic", form: "carnatic", title: "Violin varnam excerpt", url: tune("carnatic") },
-  { id: "demo-varnam-poster", artist: "demo-carnatic", form: "carnatic", title: "Kutcheri poster", url: art("carnatic") },
-  { id: "demo-lavani-stage", artist: "demo-lavani", form: "lavani", title: "Lavani with dholki", url: art("lavani") },
-  { id: "demo-kathak-spin", artist: "demo-kathak", form: "kathak", title: "Chakkar sequence", url: art("kathak") },
-  { id: "demo-bn-pose", artist: "demo-bharatanatyam", form: "bharatanatyam", title: "Aramandi study", url: art("bharatanatyam") },
-  { id: "demo-puppets", artist: "demo-kathputli", form: "kathputli", title: "Raja and Rani puppets", url: art("kathputli") },
-  { id: "demo-pots", artist: "demo-terracotta", form: "terracotta", title: "Courtyard pot set", url: art("terracotta") },
-  { id: "demo-weave", artist: "demo-handloom", form: "handloom", title: "Striped cotton throw", url: art("handloom") },
-  { id: "demo-chikan-flowers", artist: "demo-chikankari", form: "chikankari", title: "Shadow-work floral panel", url: art("chikankari") },
+  { id: "demo-wall-sketch", artist: "demo-artist", form: "warli", title: `Example photo: ${PHOTOS.warli.alt.en}`, url: PHOTOS.warli.src },
+  photoWork("demo-madhubani-fish", "demo-madhubani", "madhubani"),
+  photoWork("demo-gond-tree", "demo-gond", "gond"),
+  photoWork("demo-patta-temple", "demo-pattachitra", "pattachitra"),
+  photoWork("demo-kalam-vines", "demo-kalamkari", "kalamkari"),
+  photoWork("demo-folk-poster", "demo-musician", "marathi-folk"),
+  { id: "demo-baul-song", artist: "demo-baul", form: "baul", title: "Ektara melody (placeholder tune)", url: tune("baul") },
+  photoWork("demo-baul-poster", "demo-baul", "baul"),
+  { id: "demo-raag", artist: "demo-hindustani", form: "hindustani", title: "Evening raag excerpt (placeholder tune)", url: tune("hindustani") },
+  photoWork("demo-raag-poster", "demo-hindustani", "hindustani"),
+  { id: "demo-varnam", artist: "demo-carnatic", form: "carnatic", title: "Violin varnam excerpt (placeholder tune)", url: tune("carnatic") },
+  photoWork("demo-varnam-poster", "demo-carnatic", "carnatic"),
+  photoWork("demo-lavani-stage", "demo-lavani", "lavani"),
+  photoWork("demo-kathak-spin", "demo-kathak", "kathak"),
+  photoWork("demo-bn-pose", "demo-bharatanatyam", "bharatanatyam"),
+  photoWork("demo-puppets", "demo-kathputli", "kathputli"),
+  photoWork("demo-pots", "demo-terracotta", "terracotta"),
+  photoWork("demo-weave", "demo-handloom", "handloom"),
+  photoWork("demo-chikan-flowers", "demo-chikankari", "chikankari"),
 ];
 
 /** Listed oldest → newest; `created` follows this order so newer samples sort first among samples. */
@@ -120,6 +130,7 @@ export async function seedSamples(query: Query) {
     );
 
   for (const w of SAMPLE_WORKS)
+  {
     await query("INSERT INTO works(id,artist,form,title,url) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING", [
       w.id,
       w.artist,
@@ -127,6 +138,9 @@ export async function seedSamples(query: Query) {
       w.title,
       w.url,
     ]);
+    // Existing databases: refresh sample works in place (only rows owned by sample accounts).
+    await query("UPDATE works SET title=$1,url=$2 WHERE id=$3 AND artist IN (SELECT id FROM accounts WHERE sample=1)", [w.title, w.url, w.id]);
+  }
 
   // The three original sample commissions keep created=0 and their original values.
   await query(

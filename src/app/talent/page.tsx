@@ -26,8 +26,7 @@ export default async function Page({
   const categoryName = all.find((form) => form.id === params.form)?.[lang === "hi" ? "hi" : "name"];
   return (
     <>
-      <div className="page-heading"><div>
-      <p className="eyebrow">{t("The artist directory", "कलाकार निर्देशिका")}</p>
+      <div className="page-heading"><div>
       <h1>{t("Find your kind of craft.", "अपनी पसंद की कला खोजें।")}</h1>
       <p className="page-lead">
         {t(
@@ -37,7 +36,7 @@ export default async function Page({
       </p>
       </div></div>
       <Filters all={all} params={params} />
-      <div className="results-bar"><p>{ranked.length} {t("artists", "कलाकार")}{categoryName ? ` · ${categoryName}` : ""}</p><p>{t("Ranked by accepted finished work", "स्वीकृत तैयार कार्य के अनुसार रैंकिंग")}</p></div>
+      <div className="results-bar"><p>{ranked.length} {t("artists", "कलाकार")}{categoryName ? `, ${categoryName}` : ""}</p><p>{t("Ranked by accepted finished work", "स्वीकृत तैयार कार्य के अनुसार रैंकिंग")}</p></div>
       <div className="directory-grid">
         {ranked.map((p) => {
           const count = Number(p.completed);
@@ -48,15 +47,13 @@ export default async function Page({
                 all.find((f) => f.id === id)?.[lang === "hi" ? "hi" : "name"],
             )
             .filter(Boolean)
-            .join(" · ");
+            .join(", ");
           return (
             <DirectoryTile
               key={p.id}
               href={"/people/" + p.username}
               title={p.name}
-              cover={
-                p.cover_url || (p.photo ? "/api/media/" + p.photo : undefined)
-              }
+              cover={p.cover_url ?? undefined /* work only, never the artist's profile photo */}
               formLabel={names || p.name}
               action={t("View portfolio", "पोर्टफ़ोलियो देखें")}
               footer={

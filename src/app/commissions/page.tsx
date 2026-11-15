@@ -5,7 +5,7 @@ import { viewer } from "@/server/auth";
 import { language } from "@/i18n/language";
 import { Filters, Sample, stateName } from "@/components/discovery";
 import { sampleCover } from "@/lib/sample-media";
-import { deadlineDate } from "@/lib/commission-display";
+import { deadlineDate, mediaUrl } from "@/lib/commission-display";
 export default async function Page({
   searchParams,
 }: {
@@ -22,8 +22,7 @@ export default async function Page({
   return (
     <>
       <div className="page-heading">
-        <div><p className="eyebrow">{t("The commission board", "कमीशन बोर्ड")}</p>
-        <h1>{t("Good work starts here.", "अच्छे काम की शुरुआत यहाँ।")}</h1>
+        <div><h1>{t("The commission board", "कमीशन बोर्ड")}</h1>
         <p className="page-lead">{t("Find a brief that speaks to your craft, or discover what artists and customers have made together.", "अपनी कला के लिए सही अनुरोध खोजें या कलाकारों और ग्राहकों के मिलकर बनाए काम देखें।")}</p></div>
         {(!user || user.role === "customer") && (
           <Link className="button" href={user ? "/commissions/new" : "/login"}>
@@ -32,7 +31,7 @@ export default async function Page({
         )}
       </div>
       <Filters all={all} params={selectedParams} status />
-      <div className="results-bar"><p>{items.length} {t("commissions", "कमीशन")}</p>{user && <Link href="/profile/history">{t("Your applications & work", "आपके प्रस्ताव और काम")} <span aria-hidden="true">↗</span></Link>}</div>
+      <div className="results-bar"><p>{items.length} {t("commissions", "कमीशन")}</p>{user && <Link href="/profile/history">{t("Your applications & work", "आपके प्रस्ताव और काम")}</Link>}</div>
       <div className="directory-grid">
         {items.map((c) => {
           const form = all.find((f) => f.id === c.form);
@@ -43,7 +42,7 @@ export default async function Page({
               title={c.title}
               cover={
                 c.output && /\.(png|jpg|webp)$/i.test(c.output)
-                  ? c.output.startsWith("/seed/") ? c.output : "/api/media/" + c.output
+                  ? mediaUrl(c.output)
                   : c.sample
                     ? sampleCover(c.form)
                     : c.reference ? "/api/media/" + c.reference : undefined
@@ -63,8 +62,7 @@ export default async function Page({
               <small>
                 <Link href={"/people/" + c.customer_username}>
                   {c.customer_name}
-                </Link>{" "}
-                · {form?.[lang === "hi" ? "hi" : "name"]}
+                </Link>, {form?.[lang === "hi" ? "hi" : "name"]}
               </small>
               {c.customer_contact && <small className="contact-inline">{t("Contact", "संपर्क")}: {c.customer_contact}</small>}
               <small>{t("Deadline", "समय-सीमा")}: {deadlineDate(c.deadline, lang === "hi")}</small>

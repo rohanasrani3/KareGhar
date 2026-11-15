@@ -63,8 +63,7 @@ export default async function Page() {
     ],
   ] as const;
   return (
-    <>
-      <p className="eyebrow">{t("The work, in numbers", "काम, आँकड़ों में")}</p>
+    <>
       <h1>
         {t("What the pilot has done so far", "पायलट की अब तक की उपलब्धियाँ")}
       </h1>
@@ -74,7 +73,7 @@ export default async function Page() {
           "हमारे समुदाय के अनुरोधों, सहयोग और तैयार कार्यों की एक साझा तस्वीर।",
         )}
       </p>
-      {Number(s.samples) > 0 && <aside className="pilot-note"><span className="sample">{t("Pilot · Sample data included", "पायलट · नमूना डेटा शामिल")}</span><p>{t("These totals include fictional examples to show how KareGhar works. Sample fees illustrate commission value; they are not real earnings or verified payments.", "इन आँकड़ों में KareGhar को समझाने के लिए काल्पनिक उदाहरण शामिल हैं। नमूना शुल्क कमीशन का मूल्य दिखाते हैं; वे वास्तविक आय या सत्यापित भुगतान नहीं हैं।")}</p></aside>}
+      {Number(s.samples) > 0 && <aside className="pilot-note"><span className="sample">{t("Pilot, sample data included", "पायलट, नमूना डेटा शामिल")}</span><p>{t("These totals include fictional examples to show how KareGhar works. Sample fees illustrate commission value; they are not real earnings or verified payments.", "इन आँकड़ों में KareGhar को समझाने के लिए काल्पनिक उदाहरण शामिल हैं। नमूना शुल्क कमीशन का मूल्य दिखाते हैं; वे वास्तविक आय या सत्यापित भुगतान नहीं हैं।")}</p></aside>}
       <dl className="impact-totals">
         {totals.map(([label, value]) => (
           <div key={label}>

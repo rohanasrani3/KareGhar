@@ -23,6 +23,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
     {tab === "personal" && <ProfileEditor user={{ name, username, email, company, photo, role, bio, contact }} links={JSON.parse(user.links) as string[]} lang={lang} />}
     {tab === "portfolio" && <PortfolioManager items={portfolio} all={all} lang={lang} onboarding={params.onboarding === "1"} />}
     {tab === "security" && <AccountSecurity lang={lang} admin={user.role === "admin"} />}
-    {user.role === "admin" && <p><Link href="/admin">{t("Open moderation", "खाता प्रबंधन खोलें")} →</Link></p>}
+    {user.role === "admin" && <p><Link href="/admin">{t("Open moderation", "खाता प्रबंधन खोलें")}</Link></p>}
   </section>;
 }

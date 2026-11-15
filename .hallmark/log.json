@@ -1,0 +1,34 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "shape": "Photographic",
+  "theme": "brand (Loom material)",
+  "axes": "light/roman-serif/cool",
+  "hero": "Ledge",
+  "nav": "floating pill",
+  "footer": "colophon block",
+  "imagery": "photographs, Wikimedia Commons 6, natural",
+  "photos": [
+   "Raghurajpur_Artist.JPG",
+   "Woman_doing_Block_Printing_at_Bagru_village",
+   "Dilli_Haat_Madhubani_Mithila_Painting_Artist.jpg",
+   "Baul_Singer_1.jpg",
+   "Kathak_Tatkar.jpg"
+  ],
+  "entry": "src/app/page.tsx",
+  "sections": [
+   "hero",
+   "regions",
+   "photo band",
+   "process",
+   "craft index",
+   "cta"
+  ],
+  "signature": "a real Pattachitra being painted, full width, the headline on a paper plate at its base",
+  "waived": [],
+  "prompt": "marketplace where businesses commission Indian folk artists",
+  "date": "2026-11-15"
+ }
+]

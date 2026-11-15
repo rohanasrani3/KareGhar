@@ -19,7 +19,7 @@ export default async function Page({
   const portfolio = person.role === "artist" ? await works(id) : [];
   return (
     <section className="narrow">
-      <Link href="/admin">← {t("Account moderation", "खाता प्रबंधन")}</Link>
+      <Link href="/admin">{t("Account moderation", "खाता प्रबंधन")}</Link>
       <h1>{person.name}</h1>
       <p>
         @{person.username} ·{" "}
@@ -47,7 +47,7 @@ export default async function Page({
         <p key={c.id}>
           <Link href={"/commissions/" + c.id}>{c.title}</Link> ·{" "}
           {stateName(c.status, lang === "hi")}
-          {c.paused ? " · " + t("Paused", "रुका हुआ") : ""}
+          {c.paused ? ", " + t("Paused", "रुका हुआ") : ""}
         </p>
       ))}
       {admin.id !== id && !person.sample && (
