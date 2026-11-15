@@ -64,7 +64,14 @@
 .quote-option strong, .quote-option small { display: block; }
 .quote-option strong { font-size: .87rem; }
 .quote-option small { font-size: .75rem; font-weight: 400; margin-top: .2rem; }
-.contact-notice { border: 1px solid var(--color-line-strong); border-top: 2px solid var(--color-rule-ink); border-radius: 0; background: var(--color-saffron-tint); padding: 1rem; }
+.proposal-preview { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; min-width: 0; }
+.proposal-preview legend { float: left; width: 100%; margin: 0; }
+.proposal-preview .quote-legend { font-size: .9rem; font-weight: 600; margin: 0; }
+.proposal-preview .quote-option { cursor: not-allowed; }
+.proposal-preview .quote-option:hover { border-color: var(--color-line); }
+.proposal-preview .quote-option.selected:hover { border-color: var(--color-indigo); }
+.proposal-preview .button { justify-self: start; }
+.contact-notice {border: 1px solid var(--color-line-strong); border-top: 2px solid var(--color-rule-ink); border-radius: 0; background: var(--color-saffron-tint); padding: 1rem; }
 .contact-notice > strong { display: block; color: var(--color-saffron-ink); font-size: .9rem; }
 .contact-notice p { font-size: .8rem; margin: .5rem 0 .85rem; }
 .check-label { display: flex; align-items: flex-start; gap: .6rem; line-height: 1.5; }

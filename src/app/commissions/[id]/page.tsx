@@ -6,7 +6,7 @@ import { commissions, forms } from "@/server/market";
 import { historyDetail } from "@/server/history";
 import { language } from "@/i18n/language";
 import { Sample, stateName } from "@/components/discovery";
-import { ProposalForm } from "@/components/proposal-form";
+import { ProposalForm, ProposalPreview } from "@/components/proposal-form";
 import { PortfolioGallery } from "@/components/portfolio-gallery";
 import { OUTPUT_LABELS, deadlineDate, mediaUrl, rupees } from "@/lib/commission-display";
 import "@/components/commissions.css";
@@ -38,6 +38,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </section>
         {c.output && <section className="workspace-panel"><h2>{t("Finished work", "तैयार कार्य")}</h2><PortfolioGallery hi={lang === "hi"} items={[{ id: c.id, title: c.title, url: mediaUrl(c.output), formLabel }]} /></section>}
         {c.status === "finding" && !c.sample && user?.role === "artist" && !c.paused && <section className="workspace-panel" id="proposal"><p className="meta">{t("Start a conversation", "बातचीत शुरू करें")}</p><h2>{t("Make it yours", "अपना प्रस्ताव भेजें")}</h2><ProposalForm id={id} fee={c.fee} hi={lang === "hi"} /></section>}
+        {c.status === "finding" && Boolean(c.sample) && user?.role !== "customer" && <section className="workspace-panel" id="proposal"><p className="meta">{t("Start a conversation", "बातचीत शुरू करें")}</p><h2>{t("Make it yours", "अपना प्रस्ताव भेजें")}</h2><ProposalPreview fee={c.fee} hi={lang === "hi"} /></section>}
       </div>
       <aside className="commission-aside">
         <div className="customer-contact"><p className="meta">{t("Commissioned by", "अनुरोधकर्ता")}</p><Link className="customer-name" href={"/people/" + c.customer_username}>{c.customer_name}</Link><p className="contact-caption">{t("Contact", "संपर्क")}</p><p className="pre">{c.customer_contact || t("Send a proposal to start a private conversation.", "निजी बातचीत शुरू करने के लिए प्रस्ताव भेजें।")}</p></div>

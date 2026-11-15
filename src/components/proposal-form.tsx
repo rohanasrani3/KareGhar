@@ -12,6 +12,24 @@ export function SafetyAcknowledgment({ hi }: { hi: boolean }) {
   </div>;
 }
 
+/**
+ * The proposal panel as a read-only preview, for sample briefs. Sample briefs
+ * never accept proposals (AGENTS.md), but artists should still see how
+ * accepting the budget or quoting works. Every control is disabled.
+ */
+export function ProposalPreview({ fee, hi }: { fee: number; hi: boolean }) {
+  const amount = "₹" + Number(fee).toLocaleString("en-IN");
+  return <fieldset className="proposal-preview" disabled>
+    <legend className="subtle-notice"><strong>{hi ? "यह नमूना अनुरोध है" : "This is a sample brief"}</strong><p>{hi ? "नमूना अनुरोध पर प्रस्ताव नहीं भेजे जा सकते। प्रस्ताव भेजने या बजट स्वीकार करने के लिए बिना “Sample data” टैग वाला अनुरोध खोलें।" : "Sample briefs don't take proposals. To accept a budget or send a quotation, open a brief without the Sample data tag."}</p></legend>
+    <div className="quote-options">
+      <p className="quote-legend">{hi ? "आपका मूल्य" : "Your price"}</p>
+      <label className="quote-option selected"><input type="radio" checked readOnly /><span><strong>{hi ? amount + " पर काम करें" : "Work for " + amount}</strong><small>{hi ? "ग्राहक का प्रस्तावित बजट स्वीकार करें" : "Accept the customer's proposed budget"}</small></span></label>
+      <label className="quote-option"><input type="radio" readOnly /><span><strong>{hi ? "अपना मूल्य दें" : "Send your quotation"}</strong><small>{hi ? "कार्य के अनुसार उचित राशि सुझाएँ" : "Suggest an amount for the work involved"}</small></span></label>
+    </div>
+    <button type="button" className="button">{hi ? "निजी प्रस्ताव भेजें" : "Send private proposal"}</button>
+  </fieldset>;
+}
+
 export function ProposalForm({ id, fee, hi, edit, onCancel }: { id: string; fee: number; hi: boolean; edit?: { message: string; pricing: string; quote: number }; onCancel?: () => void }) {
   const [pricing, setPricing] = useState(edit?.pricing ?? "offered");
   const router = useRouter();
