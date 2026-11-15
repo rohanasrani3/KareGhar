@@ -10,6 +10,17 @@ import { PortfolioGallery } from "@/components/portfolio-gallery";
 import { Rating } from "@/components/rating";
 import { mediaUrl } from "@/lib/commission-display";
 import "@/components/profile.css";
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
+  const { username } = await params;
+  const p = await publicProfile(username);
+  if (!p) return { title: "Profile not found" };
+  const title = `${p.name} on KareGhar`;
+  const description = p.bio ? p.bio.slice(0, 150) : p.role === "artist" ? "Folk artist on KareGhar" : "Customer on KareGhar";
+  // absolute: the layout's "%s · KareGhar" template would otherwise repeat the site name.
+  return { title: { absolute: title }, description, openGraph: { title, description, siteName: "KareGhar" } };
+}
 
 export default async function Page({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
