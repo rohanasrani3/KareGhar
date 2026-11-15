@@ -20,7 +20,7 @@ export function SafetyAcknowledgment({ hi }: { hi: boolean }) {
 export function ProposalPreview({ fee, hi }: { fee: number; hi: boolean }) {
   const amount = "₹" + Number(fee).toLocaleString("en-IN");
   return <fieldset className="proposal-preview" disabled>
-    <legend className="subtle-notice"><strong>{hi ? "यह नमूना माँग है" : "This is a sample demand"}</strong><p>{hi ? "नमूना माँग पर प्रस्ताव नहीं भेजे जा सकते। प्रस्ताव भेजने या बजट स्वीकार करने के लिए बिना “Sample data” टैग वाली माँग खोलें।" : "Sample demands don't take proposals. To accept a budget or send a quotation, open a demand without the Sample data tag."}</p></legend>
+    <legend className="subtle-notice"><strong>{hi ? "यह नमूना माँग है" : "This is a sample listing"}</strong><p>{hi ? "इस पर प्रस्ताव नहीं भेजे जा सकते। बिना “नमूना” टैग वाली माँगों पर प्रस्ताव भेजें।" : "It doesn't take proposals. Demands without the Sample tag do."}</p></legend>
     <div className="quote-options">
       <p className="quote-legend">{hi ? "आपका मूल्य" : "Your price"}</p>
       <label className="quote-option selected"><input type="radio" checked readOnly /><span><strong>{hi ? amount + " पर काम करें" : "Work for " + amount}</strong><small>{hi ? "ग्राहक का प्रस्तावित बजट स्वीकार करें" : "Accept the customer's proposed budget"}</small></span></label>

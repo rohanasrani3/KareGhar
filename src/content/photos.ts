@@ -1,12 +1,13 @@
 /**
  * Real photographs used on the site. All come from Wikimedia Commons under
  * free licences (public domain, CC0, Free Art License or Creative Commons
- * Attribution / ShareAlike). They show real crafts and performances, NOT work
- * by KareGhar's (fictional) sample artists.
+ * Attribution / ShareAlike). They show real crafts and performances, not work
+ * by KareGhar's sample artists.
  *
  * PHOTOS are site imagery (home page). FORM_PHOTOS show one art form's work
- * with no people in frame; sample records may use them only as clearly
- * labelled example photos ("Example photo: …"), never as a real artist's work.
+ * with no people in frame; sample records use them, and every gallery caption
+ * credits the photographer (src/content/credits.ts). Never present them as a
+ * real KareGhar artist's work.
  *
  * CC BY / CC BY-SA / FAL require credit: show the credit beside the photo or
  * link to /credits, which lists every entry here. Files were resized, converted

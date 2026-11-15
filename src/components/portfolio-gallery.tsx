@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useId, useState } from "react";
 import { Rating } from "./rating";
+import { creditFor } from "@/content/credits";
 import "./profile.css";
 
 export type GalleryItem = { id: string; title: string; url: string; formLabel: string; rating?: number | null };
@@ -23,6 +24,13 @@ export function mediaKind(url: string) {
     if (/\.(mp4|webm)$/.test(path)) return "video";
   } catch { /* Invalid legacy URLs remain links rather than breaking a profile. */ }
   return "link";
+}
+
+/** Credit for Wikimedia Commons media hosted on the site (sample records); user uploads have none. */
+function CreditLine({ url, hi }: { url: string; hi: boolean }) {
+  const credit = creditFor(url);
+  if (!credit) return null;
+  return <small className="photo-credit">{credit.kind === "recording" ? (hi ? "रिकॉर्डिंग" : "Recording") : (hi ? "फ़ोटो" : "Photo")}: <a href={credit.source} target="_blank" rel="noreferrer noopener">{credit.author}</a>, <a href={credit.licenseUrl} target="_blank" rel="noreferrer noopener">{credit.license}</a></small>;
 }
 
 export function PortfolioMedia({ item, hi }: { item: GalleryItem; hi: boolean }) {
@@ -60,12 +68,12 @@ export function PortfolioGallery({ items, hi, defaultView = "slider", allowViewT
       {view === "grid" ? <div className="portfolio-grid">
         {items.map((item, i) => <article className="portfolio-grid-item" key={item.id}>
           <div className="portfolio-stage"><PortfolioMedia item={item} hi={hi} /></div>
-          <div className="portfolio-caption"><div><strong>{item.title}</strong><small>{item.formLabel}</small>{item.rating !== undefined && <Rating score={item.rating} hi={hi} />}</div><button type="button" className="gallery-expand" onClick={() => { setIndex(i); setView("slider"); }} aria-label={hi ? `${item.title} बड़ा देखें` : `View ${item.title} larger`}>↗</button></div>
+          <div className="portfolio-caption"><div><strong>{item.title}</strong><small>{item.formLabel}</small>{item.rating !== undefined && <Rating score={item.rating} hi={hi} />}<CreditLine url={item.url} hi={hi} /></div><button type="button" className="gallery-expand" onClick={() => { setIndex(i); setView("slider"); }} aria-label={hi ? `${item.title} बड़ा देखें` : `View ${item.title} larger`}>↗</button></div>
         </article>)}
       </div> : <div className="portfolio-gallery" role="region" aria-roledescription={hi ? "स्लाइडर" : "carousel"} aria-label={hi ? "कलाकृतियाँ" : "Portfolio works"}>
         <div className="portfolio-stage" key={current.id}><PortfolioMedia item={current} hi={hi} /></div>
         <div className="portfolio-caption">
-          <div aria-live="polite" aria-atomic="true"><strong>{current.title}</strong><small>{current.formLabel}</small>{current.rating !== undefined && <Rating score={current.rating} hi={hi} />}</div>
+          <div aria-live="polite" aria-atomic="true"><strong>{current.title}</strong><small>{current.formLabel}</small>{current.rating !== undefined && <Rating score={current.rating} hi={hi} />}<CreditLine url={current.url} hi={hi} /></div>
           {items.length > 1 && <div className="gallery-controls">
             <button type="button" onClick={() => move(-1)} aria-label={hi ? "पिछला कार्य" : "Previous work"}>←</button>
             <span>{activeIndex + 1} / {items.length}</span>

@@ -8,7 +8,7 @@ There is no customer acceptance step for finished work. Work and payment take pl
 
 ## Run locally
 
-Use Node.js 24. Run `npm ci` then `npm run dev`. Open http://localhost:3000. Local development automatically creates a persistent SQLite database and media directory under the ignored `.kareghar/` folder. Generated examples are labeled Sample data. Sign up separately as a customer and an artist to try the full workflow.
+Use Node.js 24. Run `npm ci` then `npm run dev`. Open http://localhost:3000. Local development automatically creates a persistent SQLite database and media directory under the ignored `.kareghar/` folder. Sample listings carry a small Sample tag. Sign up separately as a customer and an artist to try the full workflow.
 
 - `/commissions` — Demand board for browsing customer demands; the main navigation calls it Find Demand
 - `/talent` — filter and rank artists
@@ -25,7 +25,7 @@ Use Node.js 24. Run `npm ci` then `npm run dev`. Open http://localhost:3000. Loc
 3. Build with `npm run build` and serve with `npm start` on a Node host such as Render. Set the host runtime to Node 24. For an explicitly local production-build smoke test, use KAREGHAR_LOCAL=1, a local NEXTAUTH_URL and a temporary NEXTAUTH_SECRET.
 4. Set KAREGHAR_SEED_SAMPLES=1 only if sample records should be inserted into a connected database. Accounts created by signup are always real, single-role accounts.
 
-Sample data (src/server/samples.ts) has five fictional customers, one fictional artist for each of the 17 seed art forms, portfolio work, and 17 commissions across Finding, In-progress and Done. Its artwork and tunes in public/seed are generated placeholders, not real artists' work. Run `node scripts/generate-sample-media.mjs` to regenerate them. Sample records cannot sign in or accept proposals. They do count toward pilot rankings and impact, with visible sample labels and a notice that their fees are fictional. Rankings count only demands with an artist’s finished submission, not ordinary portfolio uploads.
+Sample data (src/server/samples.ts) has nine invented customers, one invented artist for each of the 17 seed art forms, portfolio work and 44 demands across Finding, In progress and Done, with 1–4 customer ratings per artist. Portfolio media are real Wikimedia Commons photos (public/photos) and recordings (public/audio), credited in each caption and on /credits. Sample records cannot sign in or receive proposals. They count toward rankings and ratings with a visible Sample tag, and are excluded from Impact. Seeding records a version in schema_migrations and is skipped once applied; bump SEED_VERSION in samples.ts when you change sample data. Rankings count only demands with an artist’s finished submission, not ordinary portfolio uploads.
 
 Local SQLite applies migrations automatically. Set KAREGHAR_DATA_DIR to a separate directory (for example `.kareghar/qa-experience`) for isolated local tests; the default is `.kareghar`. Work in progress and private conversations are available through Work history rather than public discovery. Login email stays private; the optional public contact field is explicitly opt-in.
 
@@ -51,9 +51,9 @@ Populated portfolios have one blue **Add work** button at the top right. The bot
 
 The full header logo is `public/kareghar-logo.png`. The tab uses a transparent house-only crop at `public/kareghar-icon.png` (256×256) and `src/app/favicon.ico` (16, 32, 48, 64, 128 and 256px frames), declared in `src/app/layout.tsx`. The artwork comes from the original logo, with the wordmark and tagline excluded from the icon. Reopen a Chrome tab if its cached icon has not refreshed. Earlier designs under `design/logo-options` are archived concepts.
 
-The shared footer uses the approved folk-art marketplace paragraph and explains Sample data. Photo attribution appears in a separate **Photo credits** line at its bottom, linking to `/credits` for photographers, sources and licences. Homepage photographs and craft tiles have no overlaid credits. Exact English process/footer copy is recorded in [CHANGELOG.md](CHANGELOG.md).
+The shared footer uses the approved folk-art marketplace paragraph and explains the Sample tag. Attribution appears in a separate **Credits** line at its bottom, linking to `/credits` for photographers, sources and licences. Homepage photographs and craft tiles have no overlaid credits. Exact English process/footer copy is recorded in [CHANGELOG.md](CHANGELOG.md).
 
-Impact reports agreed demand value, selected demands, unique selected artists, posting customers and average agreed fee. It includes tagged pilot samples, removes completion totals/rates and does not claim verified payments or earnings.
+Impact reports agreed demand value, selected demands, unique selected artists, posting customers and average agreed fee. It counts real activity only (samples are excluded), removes completion totals/rates and does not claim verified payments or earnings.
 
 ## Project documentation
 

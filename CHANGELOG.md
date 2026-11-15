@@ -4,6 +4,15 @@ This records the final approved behavior and wording. Product rules live in [AGE
 
 ## 2026-11-15
 
+### Live-looking sample catalogue (supersedes earlier sample, Impact and footer entries below)
+
+- Samples now look like ordinary listings: readable usernames (for example `meera_patil`), realistic bios, deadlines and 2026 dates. No public contact, placeholder titles, `@example.invalid` contacts or “fictional” notices are shown. Each sample keeps one small **Sample** tag (Hindi: नमूना); sample demand pages show a disabled proposal preview instead of the old notice.
+- Sample customers rate sample completions: every sample artist has 1–4 ratings (mostly 4–5 stars, a few 3s). Later completions per artist stay private but still count and are rated. This replaces the earlier rule that samples get no invented ratings.
+- Portfolio media are real Wikimedia Commons photos and recordings. Every gallery caption credits the photographer or performer; `/credits` (footer link **Credits**) lists photos and recordings. Generated placeholder tunes and SVGs (`public/seed`, `scripts/generate-sample-media.mjs`) were removed. No suitable Baul recording was found, so the Baul artist shows a photo only.
+- **Impact counts real activity only** (`sample=0`), with the line “Counts real activity only. Sample listings on the site are not included.”
+- Approved footer sentence replacing the Sample data sentence: “Listings tagged “Sample” show how the marketplace works.” Credits line: “Photographs and recordings from Wikimedia Commons. View their authors, sources and licences.”
+- Seeding records `samples:<version>` in `schema_migrations` and skips on later cold starts; bump `SEED_VERSION` in `src/server/samples.ts` when sample data changes.
+
 ### Demand workflow and customer ratings
 
 - Customers accept an artist's proposal to select that artist and lock the agreed fee. The demand moves from Finding to In progress.

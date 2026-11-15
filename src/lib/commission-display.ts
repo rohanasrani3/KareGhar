@@ -8,7 +8,7 @@ export const OUTPUT_LABELS: Record<string, [string, string]> = {
 };
 
 export const rupees = (value: number) => "₹" + Number(value).toLocaleString("en-IN");
-/** Sample records store public site paths (/seed/…, /photos/…); real uploads are private UUID keys served through the access-checked media route. */
+/** Sample records store public site paths (/photos/…, /audio/…); real uploads are private UUID keys served through the access-checked media route. */
 export const mediaUrl = (key: string) => key.startsWith("/") ? key : "/api/media/" + encodeURIComponent(key);
 export function deadlineDate(value: string, hi: boolean) {
   if (!value) return hi ? "निर्धारित नहीं" : "Not specified";

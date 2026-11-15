@@ -42,7 +42,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </div>
       <aside className="commission-aside">
         <div className="customer-contact"><p className="meta">{t("Posted by", "ग्राहक")}</p><Link className="customer-name" href={"/people/" + c.customer_username}>{c.customer_name}</Link><p className="contact-caption">{t("Contact", "संपर्क")}</p><p className="pre">{c.customer_contact || t("Send a proposal to start a private conversation.", "निजी बातचीत शुरू करने के लिए प्रस्ताव भेजें।")}</p></div>
-        {Boolean(c.sample) ? <div className="subtle-notice"><strong>{t("A glimpse of what's possible", "संभावनाओं की एक झलक")}</strong><p>{t("This fictional demand demonstrates the pilot. Explore the details; sample demands do not accept proposals.", "यह काल्पनिक माँग पायलट का उदाहरण है। नमूना माँग पर प्रस्ताव नहीं भेजे जा सकते।")}</p></div> : c.status === "finding" && !user ? <Link className="button" href="/login">{t("Sign in to send a proposal", "प्रस्ताव भेजने के लिए लॉग इन करें")}</Link> : null}
+        {!c.sample && c.status === "finding" && !user ? <Link className="button" href="/login">{t("Sign in to send a proposal", "प्रस्ताव भेजने के लिए लॉग इन करें")}</Link> : null}
         {!c.sample && c.status === "finding" && user?.role === "artist" && <a className="button" href="#proposal">{t("Send a proposal", "प्रस्ताव भेजें")} ↗</a>}
         <p className="field-help">{t("Agree on the work and payment directly before getting started.", "शुरू करने से पहले कार्य और भुगतान की शर्तें आपस में तय करें।")}</p>
       </aside>

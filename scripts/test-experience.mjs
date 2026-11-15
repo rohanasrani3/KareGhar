@@ -98,9 +98,13 @@ const impact = async () => {
 };
 for (const form of ART_FORMS) await q("INSERT INTO forms(id,category,name,hi) VALUES($1,$2,$3,$4)", [form.id, form.category, form.name, form.hi]);
 await seedSamples(q); await seedSamples(q);
-assert.equal((await q("SELECT COUNT(*) AS n FROM accounts WHERE sample=1"))[0].n, 22);
-assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1"))[0].n, 17);
-assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1 AND status='done' AND output<>''"))[0].n, 7);
+assert.equal((await q("SELECT COUNT(*) AS n FROM accounts WHERE sample=1"))[0].n, 26);
+assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1"))[0].n, 44);
+assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1 AND status='done' AND output<>''"))[0].n, 34);
+assert.equal((await q("SELECT COUNT(*) AS n FROM demand_ratings r JOIN demands d ON d.id=r.demand WHERE d.sample=1"))[0].n, 34);
+assert.equal((await q("SELECT username FROM accounts WHERE id='demo-artist'"))[0].username, "meera_patil");
+assert((await market.artists()).filter((a) => a.sample).every((a) => a.rating_count >= 1 && a.rating_count <= 4));
+assert.equal((await q("SELECT COUNT(*) AS n FROM works WHERE url LIKE '/seed/%'"))[0].n, 0);
 assert((await market.commissions()).some((c) => c.status === "finding"));
 assert(!(await market.commissions()).some((c) => c.status === "progress"));
 assert((await market.artists()).some((a) => a.sample && a.completed > 0));

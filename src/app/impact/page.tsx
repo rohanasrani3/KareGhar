@@ -9,7 +9,6 @@ type Stats = {
   customers: number;
   fees: number;
   finding: number;
-  samples: number;
 };
 export default async function Page() {
   const [{ t }, [s]] = await Promise.all([
@@ -18,9 +17,8 @@ export default async function Page() {
     COUNT(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN 1 END) AS selected,
     COUNT(DISTINCT CASE WHEN status IN ('progress','done') THEN artist END) AS artists,
     COUNT(DISTINCT customer) AS customers, COALESCE(SUM(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN fee ELSE 0 END),0) AS fees,
-    COUNT(CASE WHEN sample=1 THEN 1 END) AS samples,
     COUNT(CASE WHEN status='finding' THEN 1 END) AS finding
-    FROM demands`),
+    FROM demands WHERE sample=0`),
   ]);
   const money = (n: number) => "₹" + Number(n).toLocaleString("en-IN");
   const totals = [
@@ -68,7 +66,7 @@ export default async function Page() {
           "हमारे समुदाय की माँगों और कलाकारों से बने जुड़ाव की एक साझा तस्वीर।",
         )}
       </p>
-      {Number(s.samples) > 0 && <aside className="pilot-note"><span className="sample">{t("Pilot, sample data included", "पायलट, नमूना डेटा शामिल")}</span><p>{t("These totals include fictional examples to show how KareGhar works. Sample fees illustrate demand value; they are not real earnings or verified payments.", "इन आँकड़ों में KareGhar को समझाने के लिए काल्पनिक उदाहरण शामिल हैं। नमूना शुल्क माँग का मूल्य दिखाते हैं; वे वास्तविक आय या सत्यापित भुगतान नहीं हैं।")}</p></aside>}
+      <p className="field-help">{t("Counts real activity only. Sample listings on the site are not included.", "केवल असली गतिविधि गिनी जाती है। साइट की नमूना सूचियाँ इसमें शामिल नहीं हैं।")}</p>
       <dl className="impact-totals">
         {totals.map(([label, value]) => (
           <div key={label}>

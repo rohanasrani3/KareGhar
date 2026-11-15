@@ -45,7 +45,7 @@ export default async function Page({
               cover={
                 c.output && /\.(png|jpg|webp)$/i.test(c.output)
                   ? mediaUrl(c.output)
-                  : c.sample
+                  : c.sample && (c.status !== "done" || c.published)
                     ? sampleCover(c.form)
                     : c.reference ? "/api/media/" + c.reference : undefined
               }

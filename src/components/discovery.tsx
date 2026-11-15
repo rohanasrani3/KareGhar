@@ -13,7 +13,7 @@ export function stateName(s: string, hi: boolean) {
 }
 export async function Sample() {
   const { t } = await language();
-  return <span className="sample" title={t("Fictional pilot example. Included in demo rankings and impact.", "काल्पनिक पायलट उदाहरण। डेमो रैंकिंग और प्रभाव में शामिल।")}>{t("Sample data", "नमूना डेटा")}</span>;
+  return <span className="sample" title={t("A sample listing that shows how KareGhar works. It isn't counted on the Impact page.", "KareGhar कैसे काम करता है, यह दिखाने वाली नमूना सूची। इसे प्रभाव पृष्ठ पर नहीं गिना जाता।")}>{t("Sample", "नमूना")}</span>;
 }
 export async function Filters({
   all,
