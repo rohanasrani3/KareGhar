@@ -18,6 +18,7 @@ export function CommissionFormFields({ all, lang }: { all: Form[]; lang: "en" | 
   const [form, setForm] = useState("");
   const [output, setOutput] = useState("");
   const [preview, setPreview] = useState("");
+  const [referenceError, setReferenceError] = useState("");
   const reference = useRef<HTMLInputElement>(null);
   const hi = lang === "hi";
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -45,9 +46,9 @@ export function CommissionFormFields({ all, lang }: { all: Form[]; lang: "en" | 
           {Object.entries(OUTPUT_LABELS).map(([id, names]) => <option key={id} value={id}>{names[hi ? 1 : 0]}</option>)}
         </select>
       </label>
-      <label>{hi ? "कार्य का विवरण" : "The brief"}
+      <label>{hi ? "कार्य का विवरण" : "Demand details"}
         <textarea name="brief" maxLength={4000} required rows={7} placeholder={prompts[output]?.[hi ? 1 : 0] ?? (hi ? "ऊपर कार्य का रूप चुनें, फिर अपनी ज़रूरत बताएँ।" : "Choose an output format above, then tell the artist what you have in mind.")} />
-        <span className="field-help">{hi ? "स्पष्ट विवरण से कलाकार बेहतर प्रस्ताव दे सकते हैं।" : "A clear brief helps artists give you a considered proposal."}</span>
+        <span className="field-help">{hi ? "स्पष्ट विवरण से कलाकार बेहतर प्रस्ताव दे सकते हैं।" : "A clear demand helps artists give you a considered proposal."}</span>
       </label>
       <label>{hi ? "कार्य पूरा होने की समय-सीमा" : "Work deadline"}
         <input type="date" name="deadline" required />
@@ -55,9 +56,20 @@ export function CommissionFormFields({ all, lang }: { all: Form[]; lang: "en" | 
       </label>
       <div className="reference-upload">
         <label>{hi ? "संदर्भ चित्र" : "Reference image"} <span className="field-optional">{hi ? "वैकल्पिक" : "Optional"}</span>
-          <input ref={reference} type="file" name="reference" accept="image/jpeg,image/png,image/webp" onChange={(e) => setPreview(e.target.files?.[0] ? URL.createObjectURL(e.target.files[0]) : "")} />
-          <span className="field-help">{hi ? "JPG, PNG या WebP, अधिकतम 5 MB। आपके सार्वजनिक अनुरोध पर दिखेगा।" : "JPG, PNG or WebP, up to 5 MB. Visible with your public brief."}</span>
+          <input ref={reference} type="file" name="reference" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && (file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
+              setReferenceError(hi ? "5 MB तक की JPG, PNG या WebP फ़ाइल चुनें।" : "Choose a JPG, PNG or WebP image up to 5 MB.");
+              e.target.value = "";
+              setPreview("");
+              return;
+            }
+            setReferenceError("");
+            setPreview(file ? URL.createObjectURL(file) : "");
+          }} />
+          <span className="field-help">{hi ? "JPG, PNG या WebP, अधिकतम 5 MB। आपकी सार्वजनिक माँग पर दिखेगा।" : "JPG, PNG or WebP, up to 5 MB. Visible with your public demand."}</span>
         </label>
+        {referenceError && <p role="alert" className="form-feedback error">{referenceError}</p>}
         {preview && <div className="reference-preview"><Image src={preview} unoptimized width={500} height={300} alt={hi ? "संदर्भ का पूर्वावलोकन" : "Reference preview"} /><button className="pill" type="button" onClick={() => { setPreview(""); if (reference.current) reference.current.value = ""; }}>{hi ? "चित्र हटाएँ" : "Remove image"}</button></div>}
       </div>
       <label>{hi ? "आपका प्रस्तावित बजट (₹)" : "Your proposed budget (₹)"}

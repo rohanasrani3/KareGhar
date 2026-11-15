@@ -1,8 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { viewer } from "@/server/auth";
 import { language } from "@/i18n/language";
 import { switchLanguage } from "@/server/actions";
-import { Logo } from "./icons";
 import { ProfileMenu } from "./profile-menu";
 import { unreadCount } from "@/server/history";
 import { MainNavigation } from "./main-navigation";
@@ -12,13 +12,13 @@ export async function SiteHeader() {
   return (
     <header className="site-header">
       <div className="shell header-grid">
-        <Link className="brand" href="/">
-          <Logo /> KareGhar
+        <Link className="brand" href="/" aria-label={t("KareGhar home", "KareGhar मुख्य पृष्ठ")}>
+          <Image src="/kareghar-logo.png" alt="" width={2086} height={754} priority />
         </Link>
         <MainNavigation hi={lang === "hi"} />
         <div className="header-actions">
           {user ? (
-            <ProfileMenu admin={user.role === "admin"} artist={user.role === "artist"} unread={unread} labels={{
+            <ProfileMenu admin={user.role === "admin"} artist={user.role === "artist"} unread={unread} hi={lang === "hi"} labels={{
               profile: t("My profile", "मेरी प्रोफ़ाइल"),
               portfolio: t("My portfolio", "मेरा पोर्टफ़ोलियो"),
               history: t("Work history", "कार्य इतिहास"),

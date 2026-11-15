@@ -1,11 +1,21 @@
 "use client";
 import Image from "next/image";
 import { useId, useState } from "react";
+import { Rating } from "./rating";
 import "./profile.css";
 
-export type GalleryItem = { id: string; title: string; url: string; formLabel: string };
+export type GalleryItem = { id: string; title: string; url: string; formLabel: string; rating?: number | null };
+
+function availableUrl(url: string) {
+  if (url.startsWith("/") && !url.startsWith("//")) return true;
+  try {
+    const parsed = new URL(url);
+    return ["http:", "https:"].includes(parsed.protocol) && !parsed.username && !parsed.password;
+  } catch { return false; }
+}
 
 export function mediaKind(url: string) {
+  if (!availableUrl(url)) return "link";
   try {
     const path = new URL(url, "http://local.invalid").pathname.toLowerCase();
     if (/\.(png|jpe?g|webp|gif|svg)$/.test(path)) return "image";
@@ -16,10 +26,12 @@ export function mediaKind(url: string) {
 }
 
 export function PortfolioMedia({ item, hi }: { item: GalleryItem; hi: boolean }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  if (!availableUrl(item.url) || failedUrl === item.url) return <p className="portfolio-media" role="status">{hi ? "यह कार्य अभी उपलब्ध नहीं है।" : "This work is currently unavailable."}</p>;
   const media = mediaKind(item.url);
-  if (media === "image") return <Image src={item.url} alt={item.title} width={960} height={640} unoptimized />;
-  if (media === "audio") return <div className="portfolio-media"><span className="media-symbol" aria-hidden="true">♫</span><span>{item.title}</span><audio controls preload="none" aria-label={item.title} src={item.url}>{hi ? "ऑडियो उपलब्ध नहीं है।" : "Audio is unavailable."}</audio></div>;
-  if (media === "video") return <video controls preload="metadata" playsInline aria-label={item.title} src={item.url} />;
+  if (media === "image") return <Image src={item.url} alt={item.title} width={960} height={640} unoptimized onError={() => setFailedUrl(item.url)} />;
+  if (media === "audio") return <div className="portfolio-media"><span className="media-symbol" aria-hidden="true">♫</span><span>{item.title}</span><audio controls preload="none" aria-label={item.title} src={item.url} onError={() => setFailedUrl(item.url)}>{hi ? "ऑडियो उपलब्ध नहीं है।" : "Audio is unavailable."}</audio></div>;
+  if (media === "video") return <video controls preload="metadata" playsInline aria-label={item.title} src={item.url} onError={() => setFailedUrl(item.url)} />;
   return <div className="portfolio-media"><span className="media-symbol" aria-hidden="true">↗</span><a href={item.url} target="_blank" rel="noreferrer noopener">{hi ? "कार्य का लिंक खोलें" : "Open work link"} <span className="sr-only">{hi ? "(नई विंडो)" : "(new window)"}</span></a></div>;
 }
 
@@ -48,12 +60,12 @@ export function PortfolioGallery({ items, hi, defaultView = "slider", allowViewT
       {view === "grid" ? <div className="portfolio-grid">
         {items.map((item, i) => <article className="portfolio-grid-item" key={item.id}>
           <div className="portfolio-stage"><PortfolioMedia item={item} hi={hi} /></div>
-          <div className="portfolio-caption"><div><strong>{item.title}</strong><small>{item.formLabel}</small></div><button type="button" className="gallery-expand" onClick={() => { setIndex(i); setView("slider"); }} aria-label={hi ? `${item.title} बड़ा देखें` : `View ${item.title} larger`}>↗</button></div>
+          <div className="portfolio-caption"><div><strong>{item.title}</strong><small>{item.formLabel}</small>{item.rating !== undefined && <Rating score={item.rating} hi={hi} />}</div><button type="button" className="gallery-expand" onClick={() => { setIndex(i); setView("slider"); }} aria-label={hi ? `${item.title} बड़ा देखें` : `View ${item.title} larger`}>↗</button></div>
         </article>)}
       </div> : <div className="portfolio-gallery" role="region" aria-roledescription={hi ? "स्लाइडर" : "carousel"} aria-label={hi ? "कलाकृतियाँ" : "Portfolio works"}>
         <div className="portfolio-stage" key={current.id}><PortfolioMedia item={current} hi={hi} /></div>
         <div className="portfolio-caption">
-          <div aria-live="polite" aria-atomic="true"><strong>{current.title}</strong><small>{current.formLabel}</small></div>
+          <div aria-live="polite" aria-atomic="true"><strong>{current.title}</strong><small>{current.formLabel}</small>{current.rating !== undefined && <Rating score={current.rating} hi={hi} />}</div>
           {items.length > 1 && <div className="gallery-controls">
             <button type="button" onClick={() => move(-1)} aria-label={hi ? "पिछला कार्य" : "Previous work"}>←</button>
             <span>{activeIndex + 1} / {items.length}</span>

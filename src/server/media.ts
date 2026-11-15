@@ -12,6 +12,9 @@ const formats = {
   mp4: "video/mp4",
 } as const;
 export type Extension = keyof typeof formats;
+export function isMediaKey(key: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|mp3|mp4|wav)$/.test(key);
+}
 function detect(data: Buffer): Extension | undefined {
   if (data.subarray(0, 8).toString("hex") === "89504e470d0a1a0a") return "png";
   if (data.subarray(0, 3).toString("hex") === "ffd8ff") return "jpg";
@@ -56,31 +59,56 @@ export async function saveMedia(file: File, photo: boolean) {
   return key;
 }
 export async function removeMedia(key: string) {
-  if (!key) return;
+  if (!isMediaKey(key)) return;
   if (process.env.DATABASE_URL) {
     const { url, headers } = remote(key);
     const result = await fetch(url, { method: "DELETE", headers });
     if (!result.ok) throw Error("Media cleanup failed");
-  } else await unlink(join(mediaDirectory(), key));
+  } else await unlink(join(mediaDirectory(), key)).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== "ENOENT") throw error;
+  });
 }
-export async function mediaResponse(key: string) {
+export async function mediaResponse(key: string, request?: Request) {
+  if (!isMediaKey(key)) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   const type = formats[key.split(".").pop() as Extension];
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": type,
     "Cache-Control": "private, no-store",
     "X-Content-Type-Options": "nosniff",
+    "Accept-Ranges": "bytes",
+    "Content-Disposition": 'inline; filename="' + key + '"',
   };
-  if (process.env.DATABASE_URL) {
-    const remoteFile = remote(key),
-      response = await fetch(remoteFile.url, {
-        headers: remoteFile.headers,
-        cache: "no-store",
-      });
-    if (!response.ok) return new Response(null, { status: 404 });
-    return new Response(response.body, { headers });
+  let bytes: Buffer;
+  try {
+    if (process.env.DATABASE_URL) {
+      const remoteFile = remote(key),
+        response = await fetch(remoteFile.url, {
+          headers: remoteFile.headers,
+          cache: "no-store",
+        });
+      if (!response.ok) return new Response(null, { status: response.status === 404 ? 404 : 503, headers });
+      bytes = Buffer.from(await response.arrayBuffer());
+    } else bytes = await readFile(join(mediaDirectory(), key));
+  } catch (error) {
+    return new Response(null, { status: (error as NodeJS.ErrnoException).code === "ENOENT" ? 404 : 503, headers });
   }
-  return new Response(
-    new Uint8Array(await readFile(join(mediaDirectory(), key))),
-    { headers },
-  );
+  const range = request?.headers.get("range");
+  if (range?.startsWith("bytes=")) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    const size = bytes.length;
+    let start = 0, end = size - 1;
+    if (match && (match[1] || match[2])) {
+      if (match[1]) {
+        start = Number(match[1]);
+        if (match[2]) end = Math.min(Number(match[2]), size - 1);
+      } else start = Math.max(0, size - Number(match[2]));
+    }
+    if (!match || !(match[1] || match[2]) || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start >= size || end < start || (!match[1] && Number(match[2]) === 0))
+      return new Response(null, { status: 416, headers: { ...headers, "Content-Range": "bytes */" + size } });
+    headers["Content-Range"] = `bytes ${start}-${end}/${size}`;
+    headers["Content-Length"] = String(end - start + 1);
+    return new Response(new Uint8Array(bytes.subarray(start, end + 1)), { status: 206, headers });
+  }
+  headers["Content-Length"] = String(bytes.length);
+  return new Response(new Uint8Array(bytes), { headers });
 }

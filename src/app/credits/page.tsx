@@ -56,8 +56,8 @@ export default async function Credits() {
         <h2 id="form-photos-h">{t("Art-form example photos", "कला विधाओं की उदाहरण तस्वीरें")}</h2>
         <p className="page-lead">
           {t(
-            "Sample commissions and sample artists’ portfolios use these photos as examples of each art form. They are labelled “Example photo” and are not the sample artists’ own work.",
-            "नमूना कमीशन और नमूना कलाकारों के पोर्टफ़ोलियो इन तस्वीरों को हर कला विधा के उदाहरण के रूप में दिखाते हैं। इन पर “Example photo” लिखा है और ये नमूना कलाकारों का अपना काम नहीं हैं।",
+            "Sample demands and sample artists’ portfolios use these photos as examples of each art form. They are labelled “Example photo” and are not the sample artists’ own work.",
+            "नमूना माँग और नमूना कलाकारों के पोर्टफ़ोलियो इन तस्वीरों को हर कला विधा के उदाहरण के रूप में दिखाते हैं। इन पर “Example photo” लिखा है और ये नमूना कलाकारों का अपना काम नहीं हैं।",
           )}
         </p>
         {list(forms)}

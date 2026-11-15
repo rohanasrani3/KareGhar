@@ -1,5 +1,7 @@
 # KareGhar logo explorations
 
+These are archived concepts. The active header uses the original full logo at [`../../public/kareghar-logo.png`](../../public/kareghar-logo.png). The browser tab uses its house-only crop at [`../../public/kareghar-icon.png`](../../public/kareghar-icon.png) and [`../../src/app/favicon.ico`](../../src/app/favicon.ico), declared in the root layout. Keep the current original artwork and transparency. See [the change log](../../CHANGELOG.md) for the asset sizes, crop details and checks.
+
 Created with the built-in image generation tool. These PNGs are concept presentations with an ivory background, a primary wordmark, and two monochrome symbol previews. They are not transparent exports or vector masters.
 
 Palette direction: indigo #2e3a8c, burnt saffron #c2570c, warm ivory #f6f3ec. Generated colours are visual approximations.
@@ -12,4 +14,4 @@ Shared brief: Create a polished minimalist logo for KareGhar, a platform connect
 2. **02-blockprint-bloom.png**: A minimal hand-block-print floral emblem with four broad tapered indigo petals and a saffron circular center. Balanced curved shapes and clear negative-space channels. No stems, leaves or complex mandala.
 3. **03-woven-k.png**: A bold geometric K inspired by Indian handloom warp and weft. Broad upright and diagonal indigo ribbons with a saffron crossing accent and negative-space cuts suggesting weaving. Readable immediately as K, without a loom illustration or fine threads.
 
-These files preserve all three options for selection and refinement. The application logo has not been changed.
+These files preserve all three earlier options for reference. They do not replace the active logo or tab icon described above.

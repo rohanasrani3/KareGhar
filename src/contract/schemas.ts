@@ -3,7 +3,12 @@ export const role = z.enum(["customer", "artist"]);
 export const category = z.enum(["painting", "music", "dance", "craft"]);
 export const short = z.string().trim().min(1).max(120);
 export const paragraph = z.string().trim().min(1).max(4000);
-export const web = z.url({ protocol: /^https?$/ }).max(2048);
+export const web = z.url({ protocol: /^https?$/ }).max(2048).refine((value) => {
+  try {
+    const url = new URL(value);
+    return !url.username && !url.password;
+  } catch { return false; }
+});
 export const email = z
   .email()
   .max(254)
@@ -83,7 +88,7 @@ export interface Commission {
   updated: number;
   selected_at: number;
   submitted_at: number;
-  accepted_at: number;
+  rating: number | null;
   customer_contact: string;
   artist_name: string | null;
   artist_username: string | null;
@@ -102,6 +107,7 @@ export interface Proposal {
   created: number;
   updated: number;
   status: "active" | "cancelled";
+  unavailable: number;
 }
 export interface Work {
   id: string;

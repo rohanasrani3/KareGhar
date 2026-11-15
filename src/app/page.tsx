@@ -3,7 +3,6 @@ import Link from "next/link";
 import { language } from "@/i18n/language";
 import { ART_FORMS, CATEGORIES, type Category } from "@/contract/artForms";
 import { CATEGORY_PHOTOS, PHOTOS } from "@/content/photos";
-import { PhotoCredit } from "@/components/photo-credit";
 import { forms } from "@/server/market";
 
 /** Hindi names for the regions in the seed catalogue (src/contract/artForms.ts). */
@@ -49,18 +48,15 @@ export default async function Home() {
           sizes="(max-width: 1280px) 100vw, 1168px"
           alt={hero.alt[lang]}
         />
-        <p className="home-hero-credit photo-credit">
-          {hero.place[lang]}. <PhotoCredit photo={hero} hi={hi} />
-        </p>
         <div className="home-hero-plate">
-          <h1>{t("Commission India’s folk artists", "भारत के लोक कलाकारों से काम करवाएँ")}</h1>
-          <p>{t("Find an artist for your project, or a brief for your craft.", "अपने प्रोजेक्ट के लिए कलाकार खोजें, या अपनी कला के लिए अनुरोध।")}</p>
+          <h1>{t("Connect with India’s folk artists", "भारत के लोक कलाकारों से काम करवाएँ")}</h1>
+          <p>{t("Find an artist for your demand, or a demand for your craft.", "अपने माँग के लिए कलाकार खोजें, या अपनी कला के लिए माँग।")}</p>
           <div className="actions">
             <Link className="button" href="/talent">
               {t("Find an artist", "कलाकार खोजें")}
             </Link>
             <Link className="text-action" href="/commissions">
-              {t("Browse commissions", "कमीशन देखें")}
+              {t("Browse demands", "माँग देखें")}
             </Link>
           </div>
         </div>
@@ -83,17 +79,14 @@ export default async function Home() {
 
       <figure className="home-band">
         <Image className="home-band-photo" src={band.src} width={band.width} height={band.height} sizes="(max-width: 1280px) 100vw, 1168px" alt={band.alt[lang]} />
-        <figcaption className="photo-credit">
-          {band.place[lang]}. <PhotoCredit photo={band} hi={hi} />
-        </figcaption>
       </figure>
 
       <section className="home-section" aria-labelledby="how-h">
         <h2 id="how-h">{t("From a conversation to a creation", "बातचीत से कलाकृति तक")}</h2>
         <ol className="process-grid">
-          <li><h3>{t("Find the right fit", "सही साथी खोजें")}</h3><p>{t("Explore portfolios or post a brief with your budget, references, and the kind of work you need.", "पोर्टफ़ोलियो देखें या बजट, संदर्भ और ज़रूरी काम का विवरण देकर अनुरोध पोस्ट करें।")}</p></li>
-          <li><h3>{t("Talk before you start", "शुरू करने से पहले बात करें")}</h3><p>{t("Exchange a private proposal. Use messages to agree on the scope, price, timing, and payment before choosing an artist.", "निजी प्रस्ताव साझा करें। कलाकार चुनने से पहले संदेशों में काम, शुल्क, समय और भुगतान तय करें।")}</p></li>
-          <li><h3>{t("Make it, then share it", "बनाएँ, फिर साझा करें")}</h3><p>{t("Follow the work in Work history. Artists submit their finished piece; customers review, accept, and choose whether to publish it.", "कार्य इतिहास में काम की प्रगति देखें। कलाकार तैयार काम जमा करते हैं; ग्राहक समीक्षा, स्वीकृति और प्रकाशन तय करते हैं।")}</p></li>
+          <li><h3>{t("Find the right fit", "सही साथी खोजें")}</h3><p>{t("Explore portfolios or post a demand with your budget, references, and the kind of work you need.", "पोर्टफ़ोलियो देखें या बजट, संदर्भ और ज़रूरी काम का विवरण देकर माँग पोस्ट करें।")}</p></li>
+          <li><h3>{t("Talk before you start", "शुरू करने से पहले बात करें")}</h3><p>{t("Exchange a private proposal. Contact the artist to agree on the scope, price, timing, and payment before choosing an artist.", "निजी प्रस्ताव साझा करें। कलाकार चुनने से पहले उनसे संपर्क करके काम, शुल्क, समय और भुगतान तय करें।")}</p></li>
+          <li><h3>{t("Make it, then share it", "बनाएँ, फिर साझा करें")}</h3><p>{t("Artists submit their finished piece, and customers can then rate the artist. Artists rank based on the number of finished submissions.", "कलाकार अपना तैयार कार्य जमा करते हैं, जिसके बाद ग्राहक उन्हें रेटिंग दे सकते हैं। कलाकारों की रैंकिंग जमा तैयार कार्यों की संख्या पर आधारित है।")}</p></li>
         </ol>
       </section>
 
@@ -109,7 +102,6 @@ export default async function Home() {
                 <h3><Link href={`/talent?category=${id}`}>{CATEGORIES[id][lang]}</Link></h3>
                 <div>
                   <p className="craft-forms">{names.join(", ")}</p>
-                  <PhotoCredit photo={photo} hi={hi} />
                 </div>
                 <Link className="text-action" href={`/talent?category=${id}`}>{FIND_LABEL[id][lang]}</Link>
               </li>
@@ -120,8 +112,8 @@ export default async function Home() {
 
       <section className="home-cta" aria-labelledby="cta-h">
         <div>
-          <h2 id="cta-h">{t("Find a brief that speaks to your craft.", "अपनी कला के लिए सही अनुरोध खोजें।")}</h2>
-          <Link className="button" href="/commissions">{t("Browse open briefs", "खुले अनुरोध देखें")}</Link>
+          <h2 id="cta-h">{t("Find a demand that speaks to your craft.", "अपनी कला के लिए सही माँग खोजें।")}</h2>
+          <Link className="button" href="/commissions">{t("Browse open demands", "खुली माँगें देखें")}</Link>
         </div>
       </section>
     </>

@@ -18,6 +18,7 @@
 .profile-shell .section-heading p, .public-profile .section-heading p { margin: .45rem 0 0; color: var(--color-muted); font-size: .9rem; max-width: 65ch; }
 .profile-shell .section-heading > .button { flex-shrink: 0; }
 .profile-read-intro { display: flex; gap: 1.4rem; align-items: center; padding: .5rem 0 1.4rem; }
+.profile-read-intro > div, .managed-work-caption > div, .photo-editor-copy { min-width: 0; overflow-wrap: anywhere; }
 .profile-read-intro h3 { font-size: 1.6rem; margin: 0 0 .4rem; }
 .profile-read-intro p { margin: 0; font-size: .9rem; }
 .profile-photo-shortcut { position: relative; flex-shrink: 0; border-radius: 0; }
@@ -66,12 +67,8 @@
 .managed-work-caption { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: 1rem; }
 .managed-work-caption h3 { font-size: 1.2rem; line-height: 1.35; margin: .25rem 0 0; }
 .managed-work-caption small { font-size: .75rem; }
-.icon-button { flex-shrink: 0; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--color-line); border-radius: 0; color: var(--color-indigo); background: transparent; }
+.icon-button { flex-shrink: 0; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--color-line); border-radius: 0; color: var(--color-indigo); background: transparent; }
 .icon-button:hover { background: var(--color-paper); border-color: var(--color-indigo); }
-.add-work-tile { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; margin-top: 1.2rem; padding: 1.6rem; border: 1px dashed var(--color-line-strong); border-radius: 0; color: var(--color-indigo); font-weight: 600; }
-.add-work-tile > span { font-size: 1.5rem; line-height: 1; }
-.add-work-tile > small { font-weight: 400; }
-.add-work-tile:hover { background: var(--color-card); border-color: var(--color-indigo); }
 .profile-dialog { width: min(650px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--color-rule-ink); border-radius: 0; color: var(--color-ink); background: var(--color-card); overflow-y: auto; overscroll-behavior: contain; }
 .profile-dialog::backdrop { background: color-mix(in oklab, var(--color-ink) 45%, transparent); backdrop-filter: blur(3px); }
 .dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-line); margin-bottom: 1.4rem; }
@@ -100,10 +97,10 @@
 .public-about h2 { margin-top: .3rem; }
 .public-about > .pre { line-height: 1.8; }
 .public-finished { border-top: 1px solid var(--color-line); padding-top: 2.3rem; }
-.gallery-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: .2rem 0 1rem; }
+.gallery-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin: .2rem 0 1rem; }
 .gallery-toolbar > .muted { font-size: .8rem; color: var(--color-muted); }
-.view-switch { display: inline-flex; width: fit-content; max-width: 100%; padding: 4px; border: 1px solid var(--color-line); background: var(--color-paper); border-radius: 0; gap: 2px; }
-.view-switch > button { display: inline-flex; justify-content: center; align-items: center; gap: .4rem; padding: .5rem .8rem; min-height: 38px; border-radius: 0; font-size: .8rem; color: var(--color-muted); var(--color-on-indigo)-space: nowrap; }
+.view-switch { display: inline-flex; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: 4px; border: 1px solid var(--color-line); background: var(--color-paper); border-radius: 0; gap: 2px; }
+.view-switch > button { display: inline-flex; justify-content: center; align-items: center; gap: .4rem; padding: .5rem .8rem; min-height: 44px; border-radius: 0; font-size: .8rem; color: var(--color-muted); white-space: normal; }
 .view-switch > button[aria-pressed="true"] { background: var(--color-card); color: var(--color-indigo); font-weight: 600; }
 .view-switch > button:hover { color: var(--color-indigo); }
 .work-gallery .portfolio-gallery { margin-top: 0; border-radius: 0; }
@@ -119,7 +116,7 @@
 .work-gallery .portfolio-caption small { display: block; font-size: .75rem; margin-top: .25rem; }
 .work-gallery .gallery-controls { display: flex; align-items: center; gap: .65rem; flex-shrink: 0; }
 .work-gallery .gallery-controls span { font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--color-muted); }
-.work-gallery .gallery-controls button, .gallery-expand { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--color-line); border-radius: 0; color: var(--color-indigo); flex-shrink: 0; }
+.work-gallery .gallery-controls button, .gallery-expand { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--color-line); border-radius: 0; color: var(--color-indigo); flex-shrink: 0; }
 .work-gallery .gallery-controls button:hover, .gallery-expand:hover { background: var(--color-paper); }
 .work-gallery .portfolio-thumbs { display: flex; overflow-x: auto; flex-wrap: nowrap; gap: .6rem; padding: .25rem 1.25rem 1.25rem; scrollbar-width: thin; }
 .work-gallery .portfolio-thumbs > button { flex-shrink: 0; width: 80px; height: 60px; padding: 0; background: var(--color-sunk); border: 2px solid transparent; border-radius: 0; overflow: hidden; }
@@ -159,10 +156,10 @@
   .public-profile-heading .profile-avatar, .public-profile-heading .profile-avatar-placeholder { width: 72px; height: 72px; font-size: 2.1rem; }
   .public-profile-heading h1 { font-size: 2rem; }
   .public-profile-heading .profile-intro .meta { font-size: .75rem; }
-  .work-gallery .portfolio-caption { align-items: flex-start; padding: 1rem; gap: .6rem; }
+  .work-gallery .portfolio-caption { flex-wrap: wrap; align-items: flex-start; padding: 1rem; gap: .6rem; }
   .work-gallery .portfolio-caption strong { font-size: .85rem; }
   .work-gallery .gallery-controls { gap: .35rem; }
-  .work-gallery .gallery-controls button { width: 36px; height: 36px; }
+  .work-gallery .gallery-controls button { width: 44px; height: 44px; }
   .work-gallery .portfolio-media { padding: 1rem; gap: .6rem; }
   .work-gallery .portfolio-media .media-symbol { font-size: 2rem; }
   .work-gallery .portfolio-media > span:not(.media-symbol) { font-size: 1rem; }

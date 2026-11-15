@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { verify } from "@node-rs/argon2";
 import { query } from "./db";
 import type { Account } from "@/contract/schemas";
+import { takeAttempt, clearAttempts } from "./attempts";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -19,26 +20,20 @@ export const authOptions: NextAuthOptions = {
         const username = input?.username?.trim();
         if (
           !username ||
-          username.length > 40 ||
+          !/^[A-Za-z0-9_]{3,40}$/.test(username) ||
           !input?.password ||
           input.password.length > 128
         )
           return null;
-        const now = Date.now();
-        const [limit] = await query<{ attempts: number }>(
-          `INSERT INTO login_limits VALUES ($1,1,$2) ON CONFLICT(username) DO UPDATE SET
-        attempts=CASE WHEN login_limits.started<$3 THEN 1 ELSE login_limits.attempts+1 END,
-        started=CASE WHEN login_limits.started<$3 THEN $2 ELSE login_limits.started END RETURNING attempts`,
-          [username, now, now - 900000],
-        );
-        if (limit.attempts > 12) return null;
+        const attemptKey = "login:" + username;
+        if (!(await takeAttempt(attemptKey))) return null;
         const [user] = await query<Account & { password_hash: string }>(
           "SELECT * FROM account_state WHERE username=$1 AND sample=0 AND suspended=0",
           [username],
         );
-        if (!user || !(await verify(user.password_hash, input.password)))
+        if (!user?.password_hash || !(await verify(user.password_hash, input.password).catch(() => false)))
           return null;
-        await query("DELETE FROM login_limits WHERE username=$1", [username]);
+        await clearAttempts(attemptKey);
         return { id: user.id, name: user.name, revision: user.session_version };
       },
     }),

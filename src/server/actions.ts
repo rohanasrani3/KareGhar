@@ -5,20 +5,18 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { signupSchema, profileSchema, commissionSchema, short, paragraph, web, category, password } from "@/contract/schemas";
-import type { Account } from "@/contract/schemas";
 import { z } from "zod";
 import { query, transaction, type Query } from "./db";
 import { viewer } from "./auth";
 import { saveMedia, removeMedia } from "./media";
 import { SOCIALS, socialKey } from "@/components/social-links";
+import { takeAttempt, clearAttempts } from "./attempts";
+import { currentSession, lockAccounts } from "./authorization";
 
 const money = z.coerce.number().int().min(0).max(100000000);
 const refresh = () => revalidatePath("/", "layout");
-const currentSession = async (q: Query, user: Account) => (await q(
-  "UPDATE accounts SET revision=revision WHERE id=$1 AND deleted=0 AND revision=$2 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND sample=0 AND session_version=$3) RETURNING id", [user.id, user.revision, user.session_version],
-)).length > 0;
 async function event(q: Query, commission: string, actor: string, kind: string, now: number, artist = "", detail = "", quote: number | null = null, output = "") {
-  await q("INSERT INTO commission_events(id,commission,actor,artist,kind,detail,created,quote,output) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+  await q("INSERT INTO demand_events(id,demand,actor,artist,kind,detail,created,quote,output) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
     [randomUUID(), commission, actor, artist, kind, detail, now, quote, output]);
 }
 async function resolveForm(q: Query, cat: string, name: string) {
@@ -69,47 +67,68 @@ export async function updateProfile(_: string, data: FormData) {
   const { name, email, company, bio, contact } = parsed.data;
   const photo = data.get("photo");
   let key: string | null = null;
-  if (photo instanceof File && photo.size) { key = await saveMedia(photo, true); if (!key) return "file"; }
+  if (photo instanceof File && photo.size) {
+    try { key = await saveMedia(photo, true); } catch { return "unavailable"; }
+    if (!key) return "file";
+  }
   const photoValue = key ?? (data.get("removePhoto") === "on" ? "" : null);
+  let previousPhoto = "";
   try {
-    const changed = await query("UPDATE accounts SET name=$1,email=$2,company=$3,links=$4,photo=COALESCE($5,photo),bio=$8,contact=$9 WHERE id=$6 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$7) RETURNING id",
-      [name, email, company, JSON.stringify(parsed.data.links), photoValue, user.id, user.session_version, bio, contact]);
+    const changed = await transaction(async (q) => {
+      if (!await currentSession(q, user)) return [];
+      // Read the superseded file only after locking the account. Another
+      // profile save may have replaced the photo since viewer() was read.
+      const [current] = await q<{ photo: string }>("SELECT photo FROM accounts WHERE id=$1", [user.id]);
+      previousPhoto = current.photo;
+      return q("UPDATE accounts SET name=$1,email=$2,company=$3,links=$4,photo=COALESCE($5,photo),bio=$8,contact=$9 WHERE id=$6 AND revision=$10 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$7) RETURNING id",
+        [name, email, company, JSON.stringify(parsed.data.links), photoValue, user.id, user.session_version, bio, contact, user.revision]);
+    });
     if (!changed.length) { await cleanup(key); return "denied"; }
   } catch (error) {
     await cleanup(key);
     if (/unique|duplicate/i.test(String(error))) return "taken";
     throw error;
   }
-  if (photoValue !== null && user.photo) await cleanup(user.photo);
+  if (photoValue !== null) await cleanup(previousPhoto);
   refresh(); return "saved";
 }
 export async function changePassword(_: string, data: FormData) {
   const user = await viewer(), parsed = password.safeParse(data.get("password"));
   if (!user || !parsed.success) return "invalid";
+  const attemptKey = "password:" + user.id;
+  if (!(await takeAttempt(attemptKey))) return "limited";
   const [row] = await query<{ password_hash: string }>("SELECT password_hash FROM accounts WHERE id=$1", [user.id]);
   const current = String(data.get("current") ?? "");
-  if (!row?.password_hash || current.length > 128 || !(await verify(row.password_hash, current))) return "denied";
-  const changed = await query("UPDATE accounts SET password_hash=$1,revision=revision+1 WHERE id=$2 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$3) RETURNING id", [await hash(parsed.data), user.id, user.session_version]);
+  if (!row?.password_hash || current.length > 128 || !(await verify(row.password_hash, current).catch(() => false))) return "denied";
+  const changed = await query("UPDATE accounts SET password_hash=$1,revision=revision+1 WHERE id=$2 AND revision=$4 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$3) RETURNING id", [await hash(parsed.data), user.id, user.session_version, user.revision]);
   if (!changed.length) return "denied";
+  await clearAttempts(attemptKey);
   redirect("/login?changed=1");
 }
 export async function deleteAccount(_: string, data: FormData) {
   const user = await viewer();
   if (!user || user.role === "admin" || data.get("confirm") !== "DELETE") return "denied";
+  const attemptKey = "password:" + user.id;
+  if (!(await takeAttempt(attemptKey))) return "limited";
   const current = String(data.get("current") ?? "");
   const [row] = await query<{ password_hash: string }>("SELECT password_hash FROM accounts WHERE id=$1", [user.id]);
-  if (!row?.password_hash || current.length > 128 || !(await verify(row.password_hash, current))) return "denied";
+  if (!row?.password_hash || current.length > 128 || !(await verify(row.password_hash, current).catch(() => false))) return "denied";
+  await clearAttempts(attemptKey);
   const removedUploads: string[] = [];
   const anonymous = randomUUID();
   const result = await transaction(async (q) => {
-    const changed = await q("UPDATE accounts SET deleted=1,revision=revision+1,name='Deleted account',username=$1,email=$2,password_hash='',company='',links='[]',photo='',bio='',contact='' WHERE id=$3 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$4) AND NOT EXISTS(SELECT 1 FROM commissions WHERE status='progress' AND (customer=$3 OR artist=$3)) RETURNING id", ["deleted_" + anonymous, anonymous + "@deleted.invalid", user.id, user.session_version]);
+    // Use a fresh statement snapshot after acquiring the account lock: a
+    // selection that held this lock may have just created active work.
+    if (!await currentSession(q, user)) return "denied";
+    const [current] = await q<{ photo: string }>("SELECT photo FROM accounts WHERE id=$1", [user.id]);
+    const changed = await q("UPDATE accounts SET deleted=1,revision=revision+1,name='Deleted account',username=$1,email=$2,password_hash='',company='',links='[]',photo='',bio='',contact='' WHERE id=$3 AND revision=$5 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$4) AND NOT EXISTS(SELECT 1 FROM demands WHERE status='progress' AND (customer=$3 OR artist=$3)) RETURNING id", ["deleted_" + anonymous, anonymous + "@deleted.invalid", user.id, user.session_version, user.revision]);
     if (!changed.length) return "active";
+    if (current.photo) removedUploads.push(current.photo);
     const removedWorks = await q<{ url: string }>("DELETE FROM works WHERE artist=$1 RETURNING url", [user.id]);
     for (const work of removedWorks) { const key = ownedMedia(work.url); if (key) removedUploads.push(key); }
     return "saved";
   });
   if (result !== "saved") return result;
-  await cleanup(user.photo);
   for (const key of removedUploads) await cleanup(key);
   refresh(); redirect("/login?deleted=1");
 }
@@ -123,7 +142,10 @@ async function saveWork(data: FormData, updating: boolean) {
   if (updating && !old) return "denied";
   let key: string | null = null;
   const file = data.get("file");
-  if (file instanceof File && file.size) { key = await saveMedia(file, false); if (!key) return "file"; }
+  if (file instanceof File && file.size) {
+    try { key = await saveMedia(file, false); } catch { return "unavailable"; }
+    if (!key) return "file";
+  }
   const rawUrl = String(data.get("url") ?? "").trim();
   const url = key ? "/api/media/" + key : rawUrl || old?.url || "";
   if (!key && url !== old?.url && !web.safeParse(url).success) return "invalid";
@@ -133,9 +155,9 @@ async function saveWork(data: FormData, updating: boolean) {
       const form = await resolveForm(q, cat.data, name.data);
       if (!form) return "invalid";
       const rows = updating
-        ? await q("UPDATE works SET title=$1,url=$2,form=$3 WHERE id=$4 AND artist=$5 RETURNING id", [title.data, url, form, id, user.id])
+        ? await q("UPDATE works SET title=$1,url=$2,form=$3 WHERE id=$4 AND artist=$5 AND url=$6 RETURNING id", [title.data, url, form, id, user.id, old!.url])
         : await q("INSERT INTO works(id,artist,form,title,url) VALUES($1,$2,$3,$4,$5) RETURNING id", [id, user.id, form, title.data, url]);
-      return rows.length ? "saved" : "denied";
+      return rows.length ? "saved" : updating ? "conflict" : "denied";
     });
     if (result !== "saved") await cleanup(key);
     else if (old && old.url !== url) await cleanup(ownedMedia(old.url));
@@ -147,7 +169,10 @@ export async function updateWork(_: string, data: FormData) { return saveWork(da
 export async function deleteWork(_: string, data: FormData) {
   const user = await viewer();
   if (user?.role !== "artist") return "denied";
-  const rows = await query<{ url: string }>("DELETE FROM works WHERE id=$1 AND artist=$2 AND EXISTS(SELECT 1 FROM account_state WHERE id=$2 AND suspended=0 AND session_version=$3) RETURNING url", [String(data.get("id")), user.id, user.session_version]);
+  const rows = await transaction(async (q) => {
+    if (!await currentSession(q, user)) return [];
+    return q<{ url: string }>("DELETE FROM works WHERE id=$1 AND artist=$2 RETURNING url", [String(data.get("id")), user.id]);
+  });
   if (!rows.length) return "denied";
   await cleanup(ownedMedia(rows[0].url));
   refresh(); return "saved";
@@ -162,7 +187,10 @@ export async function postCommission(_: string, data: FormData) {
   const id = randomUUID(), now = Date.now();
   let key: string | null = null;
   const reference = data.get("reference");
-  if (reference instanceof File && reference.size) { key = await saveMedia(reference, true); if (!key) return "file"; }
+  if (reference instanceof File && reference.size) {
+    try { key = await saveMedia(reference, true); } catch { return "unavailable"; }
+    if (!key) return "file";
+  }
   let result: string;
   try {
     result = await transaction(async (q) => {
@@ -173,7 +201,7 @@ export async function postCommission(_: string, data: FormData) {
         if (!name.success) return "invalid";
         form = await resolveForm(q, cat, name.data) ?? "";
       }
-      const rows = await q("INSERT INTO commissions(id,customer,form,title,brief,fee,original_fee,created,updated,output_type,reference,deadline) SELECT $1,$2,id,$4,$5,$6,$6,$7,$7,$9,$10,$11 FROM forms WHERE id=$3 AND category=$8 RETURNING id", [id, user.id, form, title, brief, fee, now, cat, output_type, key ?? "", deadline]);
+      const rows = await q("INSERT INTO demands(id,customer,form,title,brief,fee,original_fee,created,updated,output_type,reference,deadline) SELECT $1,$2,id,$4,$5,$6,$6,$7,$7,$9,$10,$11 FROM forms WHERE id=$3 AND category=$8 RETURNING id", [id, user.id, form, title, brief, fee, now, cat, output_type, key ?? "", deadline]);
       if (!rows.length) return "invalid";
       await event(q, id, user.id, "posted", now, "", "", fee);
       return "saved";
@@ -189,20 +217,29 @@ export async function commissionAction(_: string, data: FormData) {
   if (!user) return "denied";
   let key: string | null = null;
   if (action === "submit") {
-    const [allowed] = await query("SELECT id FROM commission_state WHERE id=$1 AND artist=$2 AND status='progress' AND output='' AND paused=0 AND sample=0", [id, user.id]);
+    const [allowed] = await query<{ output_type: string }>("SELECT id,output_type FROM demand_state WHERE id=$1 AND artist=$2 AND status='progress' AND output='' AND paused=0 AND sample=0", [id, user.id]);
     if (!allowed || user.role !== "artist") return "denied";
     const file = data.get("file");
     if (!(file instanceof File)) return "file";
-    key = await saveMedia(file, false); if (!key) return "file";
+    try { key = await saveMedia(file, false); } catch { return "unavailable"; }
+    if (!key) return "file";
+    const accepted: Record<string, RegExp> = { image: /\.(png|jpg|webp)$/, audio: /\.(mp3|wav)$/, video: /\.mp4$/ };
+    if (accepted[allowed.output_type] && !accepted[allowed.output_type].test(key)) {
+      await cleanup(key);
+      return "file";
+    }
   }
   let result: string;
   try {
     result = await transaction(async (q) => {
       // Acquire the commission row's write lock before deciding any transition.
-      const locked = await q("UPDATE commissions SET updated=updated WHERE id=$1 AND sample=0 AND id IN (SELECT id FROM commission_state WHERE paused=0) RETURNING id", [id]);
+      const locked = await q("UPDATE demands SET updated=updated WHERE id=$1 AND sample=0 AND id IN (SELECT id FROM demand_state WHERE paused=0) RETURNING id", [id]);
       if (!locked.length) return "conflict";
+      const [participants] = await q<{ customer: string; artist: string | null }>("SELECT customer,artist FROM demands WHERE id=$1", [id]);
+      const [candidate] = action === "select" ? await q<{ artist: string }>("SELECT artist FROM proposals WHERE id=$1 AND demand=$2 AND status='active'", [String(data.get("proposal")), id]) : [];
+      await lockAccounts(q, [user.id, participants.customer, participants.artist, candidate?.artist ?? null]);
       if (!await currentSession(q, user)) return "denied";
-      const [c] = await q<Job>("SELECT id,customer,artist,status,fee,original_fee,output,paused FROM commission_state WHERE id=$1", [id]);
+      const [c] = await q<Job>("SELECT id,customer,artist,status,fee,original_fee,output,paused FROM demand_state WHERE id=$1", [id]);
       if (!c || c.paused) return "conflict";
       const now = Date.now();
       if ((action === "propose" || action === "editProposal") && user.role === "artist" && c.status === "finding") {
@@ -211,36 +248,40 @@ export async function commissionAction(_: string, data: FormData) {
         const quote = pricing === "offered" ? money.safeParse(c.original_fee) : pricing === "quote" && String(data.get("quote") ?? "").trim() ? money.safeParse(data.get("quote")) : null;
         if (!message.success || !quote?.success || data.get("acknowledged") !== "on") return "invalid";
         const rows = action === "propose"
-          ? await q("INSERT INTO proposals(id,commission,artist,message,quote,initial_quote,pricing,created,updated) VALUES($1,$2,$3,$4,$5,$5,$6,$7,$7) ON CONFLICT DO NOTHING RETURNING id", [randomUUID(), id, user.id, message.data, quote.data, pricing as string, now])
-          : await q("UPDATE proposals SET message=$1,quote=$2,pricing=$3,updated=$4 WHERE commission=$5 AND artist=$6 AND status='active' AND created>=$7 RETURNING id", [message.data, quote.data, pricing as string, now, id, user.id, now - 15 * 60 * 1000]);
+          ? await q("INSERT INTO proposals(id,demand,artist,message,quote,initial_quote,pricing,created,updated) VALUES($1,$2,$3,$4,$5,$5,$6,$7,$7) ON CONFLICT DO NOTHING RETURNING id", [randomUUID(), id, user.id, message.data, quote.data, pricing as string, now])
+          : await q("UPDATE proposals SET message=$1,quote=$2,pricing=$3,updated=$4 WHERE demand=$5 AND artist=$6 AND status='active' AND created>=$7 RETURNING id", [message.data, quote.data, pricing as string, now, id, user.id, now - 15 * 60 * 1000]);
         if (!rows.length) return action === "editProposal" ? "expired" : "conflict";
         await event(q, id, user.id, action === "propose" ? "proposed" : "proposal_edited", now, user.id, message.data, quote.data);
       } else if (action === "select" && user.role === "customer" && c.customer === user.id && c.status === "finding") {
         if (data.get("acknowledged") !== "on") return "invalid";
-        const [proposal] = await q<{ artist: string; quote: number }>("SELECT p.artist,p.quote FROM proposals p JOIN account_state a ON a.id=p.artist WHERE p.id=$1 AND p.commission=$2 AND p.status='active' AND a.suspended=0 AND a.sample=0", [String(data.get("proposal")), id]);
+        const [proposal] = await q<{ artist: string; quote: number }>("SELECT p.artist,p.quote FROM proposals p JOIN account_state a ON a.id=p.artist WHERE p.id=$1 AND p.demand=$2 AND p.status='active' AND a.suspended=0 AND a.sample=0", [String(data.get("proposal")), id]);
         if (!proposal) return "conflict";
         const participant = await q("UPDATE accounts SET revision=revision WHERE id=$1 AND deleted=0 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND sample=0) RETURNING id", [proposal.artist]);
         if (!participant.length) return "conflict";
-        await q("UPDATE commissions SET status='progress',artist=$1,fee=$2,selected_at=$3 WHERE id=$4", [proposal.artist, proposal.quote, now, id]);
+        await q("UPDATE demands SET status='progress',artist=$1,fee=$2,selected_at=$3 WHERE id=$4", [proposal.artist, proposal.quote, now, id]);
         await event(q, id, user.id, "selected", now, proposal.artist, "", proposal.quote);
-      } else if (action === "cancel" && user.role === "customer" && c.customer === user.id && c.status === "progress" && c.artist) {
+      } else if (action === "cancel" && user.role === "customer" && c.customer === user.id && c.status === "progress" && c.artist && !c.output) {
         const reason = paragraph.safeParse(data.get("reason"));
         if (!reason.success) return "invalid";
         await event(q, id, user.id, "cancelled", now, c.artist, reason.data, c.fee, c.output);
-        await q("UPDATE proposals SET status='cancelled',updated=$1 WHERE commission=$2 AND artist=$3", [now, id, c.artist]);
-        await q("UPDATE commissions SET status='finding',artist=NULL,fee=original_fee,output='',published=0,selected_at=0,submitted_at=0,accepted_at=0 WHERE id=$1", [id]);
+        await q("UPDATE proposals SET status='cancelled',updated=$1 WHERE demand=$2 AND artist=$3", [now, id, c.artist]);
+        await q("UPDATE demands SET status='finding',artist=NULL,fee=original_fee,output='',published=0,selected_at=0,submitted_at=0 WHERE id=$1", [id]);
       } else if (action === "submit" && user.role === "artist" && c.artist === user.id && c.status === "progress" && !c.output && key) {
-        await q("UPDATE commissions SET output=$1,submitted_at=$2 WHERE id=$3", [key, now, id]);
+        await q("UPDATE demands SET status='done',output=$1,submitted_at=$2 WHERE id=$3", [key, now, id]);
         await event(q, id, user.id, "submitted", now, user.id, "", c.fee, key);
-      } else if (action === "accept" && user.role === "customer" && c.customer === user.id && c.status === "progress" && c.output) {
-        await q("UPDATE commissions SET status='done',accepted_at=$1 WHERE id=$2", [now, id]);
-        await event(q, id, user.id, "accepted", now, c.artist ?? "", "", c.fee);
+      } else if (action === "rate" && user.role === "customer" && c.customer === user.id && c.status === "done" && c.output && c.artist) {
+        const score = z.coerce.number().int().min(1).max(5).safeParse(data.get("rating"));
+        if (!score.success) return "invalid";
+        await q(`INSERT INTO demand_ratings(demand,customer,artist,score,created,updated) VALUES($1,$2,$3,$4,$5,$5)
+          ON CONFLICT(demand) DO UPDATE SET score=excluded.score,updated=excluded.updated`, [id, user.id, c.artist, score.data, now]);
+        // Keep the individual score in the scoped rating projection, not the event log.
+        await event(q, id, user.id, "rated", now, c.artist);
       } else if (action === "visibility" && user.role === "customer" && c.customer === user.id && c.status === "done" && c.output) {
         const published = data.get("public") === "on" ? 1 : 0;
-        await q("UPDATE commissions SET published=$1 WHERE id=$2", [published, id]);
+        await q("UPDATE demands SET published=$1 WHERE id=$2", [published, id]);
         await event(q, id, user.id, published ? "published" : "hidden", now, c.artist ?? "");
       } else return "conflict";
-      await q("UPDATE commissions SET updated=$1 WHERE id=$2", [now, id]);
+      await q("UPDATE demands SET updated=$1 WHERE id=$2", [now, id]);
       return "saved";
     });
   } catch (error) { await cleanup(key); throw error; }

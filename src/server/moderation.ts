@@ -16,10 +16,11 @@ export async function moderationAccounts() {
     username: string;
     role: string;
     suspended: number;
+    deleted: number;
     active: number;
   }>(
-    `SELECT a.id,a.name,a.username,a.effective_role AS role,a.suspended,
-    (SELECT CAST(COUNT(*) AS INTEGER) FROM commissions c WHERE (c.customer=a.id OR c.artist=a.id) AND c.status<>'done') AS active
+    `SELECT a.id,a.name,a.username,a.effective_role AS role,a.suspended,a.deleted,
+    (SELECT CAST(COUNT(*) AS INTEGER) FROM demands c WHERE (c.customer=a.id OR c.artist=a.id) AND c.status<>'done') AS active
     FROM account_state a WHERE a.sample=0 ORDER BY a.name,a.username`,
   );
 }
@@ -47,9 +48,10 @@ export async function moderationDashboard(id: string) {
     links: string;
     suspended: number;
     sample: number;
+    deleted: number;
     session_version: number;
   }>(
-    "SELECT name,username,effective_role AS role,company,links,suspended,sample,session_version FROM account_state WHERE id=$1",
+    "SELECT name,username,effective_role AS role,company,links,suspended,sample,deleted,session_version FROM account_state WHERE id=$1",
     [id],
   );
   if (!person) notFound();
@@ -59,7 +61,7 @@ export async function moderationDashboard(id: string) {
     status: string;
     paused: number;
   }>(
-    "SELECT id,title,status,paused FROM commission_state WHERE customer=$1 OR artist=$1 ORDER BY created DESC",
+    "SELECT id,title,status,paused FROM demand_state WHERE customer=$1 OR artist=$1 ORDER BY created DESC",
     [id],
   );
   return { person, jobs };

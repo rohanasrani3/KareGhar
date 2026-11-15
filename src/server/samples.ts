@@ -144,16 +144,16 @@ export async function seedSamples(query: Query) {
 
   // The three original sample commissions keep created=0 and their original values.
   await query(
-    "INSERT INTO commissions(id,customer,form,title,brief,fee,sample,created,status,artist) VALUES ('demo-mural','demo-customer','warli','Warli mural for a café','Paint a village celebration for the café counter wall.',8000,1,0,'done','demo-artist'),('demo-jingle','demo-customer','marathi-folk','Marathi folk jingle','Record a short folk melody for a café opening.',3000,1,0,'progress','demo-musician') ON CONFLICT DO NOTHING",
+    "INSERT INTO demands(id,customer,form,title,brief,fee,sample,created,status,artist) VALUES ('demo-mural','demo-customer','warli','Warli mural for a café','Paint a village celebration for the café counter wall.',8000,1,0,'done','demo-artist'),('demo-jingle','demo-customer','marathi-folk','Marathi folk jingle','Record a short folk melody for a café opening.',3000,1,0,'progress','demo-musician') ON CONFLICT DO NOTHING",
   );
   await query(
-    "INSERT INTO commissions(id,customer,form,title,brief,fee,sample,created) VALUES ('demo-print','demo-customer','block-print','Hand-printed table runners','Design six cotton runners with Bagru floral motifs for our café.',4500,1,0) ON CONFLICT DO NOTHING",
+    "INSERT INTO demands(id,customer,form,title,brief,fee,sample,created) VALUES ('demo-print','demo-customer','block-print','Hand-printed table runners','Design six cotton runners with Bagru floral motifs for our café.',4500,1,0) ON CONFLICT DO NOTHING",
   );
 
   // Small created values keep every sample below real commissions (created DESC = real first).
   for (const [i, c] of SAMPLE_COMMISSIONS.entries()) {
     await query(
-      "INSERT INTO commissions(id,customer,form,title,brief,fee,status,artist,sample,created) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9) ON CONFLICT DO NOTHING",
+      "INSERT INTO demands(id,customer,form,title,brief,fee,status,artist,sample,created) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9) ON CONFLICT DO NOTHING",
       [c.id, c.customer, c.form, c.title, c.brief, c.fee, c.status, c.artist ?? null, i + 1],
     );
   }
@@ -162,7 +162,7 @@ export async function seedSamples(query: Query) {
   // journey, while real data and existing sample identities remain untouched.
   for (const a of SAMPLE_ACCOUNTS) {
     await query("UPDATE accounts SET bio=$1,contact=$2 WHERE id=$3 AND sample=1", [
-      a.role === "artist" ? "A fictional artist profile demonstrating the KareGhar pilot. Explore the sample portfolio to see how artists share their work." : "A fictional customer account demonstrating how businesses commission work on KareGhar.",
+      a.role === "artist" ? "A fictional artist profile demonstrating the KareGhar pilot. Explore the sample portfolio to see how artists share their work." : "A fictional customer account demonstrating how customers post demands on KareGhar.",
       a.id + "@example.invalid", a.id,
     ]);
   }
@@ -178,11 +178,11 @@ export async function seedSamples(query: Query) {
     const created = Date.UTC(2025, 0, 1) + i * 86400000;
     const outputType = music.has(c.form) ? "audio" : dance.has(c.form) ? "live" : craft.has(c.form) ? "physical" : "image";
     const output = c.status === "done" ? music.has(c.form) ? tune(c.form) : sampleCover(c.form) ?? "" : "";
-    await query(`UPDATE commissions SET original_fee=fee,output_type=$1,created=$2,updated=$3,
-      selected_at=$4,submitted_at=$5,accepted_at=$6,output=$7,published=$8 WHERE id=$9 AND sample=1`, [
-      outputType, created, created + (c.status === "done" ? 604800000 : c.status === "progress" ? 86400000 : 0),
+    await query(`UPDATE demands SET original_fee=fee,output_type=$1,created=$2,updated=$3,
+      selected_at=$4,submitted_at=$5,output=$6,published=$7 WHERE id=$8 AND sample=1`, [
+      outputType, created, created + (c.status === "done" ? 518400000 : c.status === "progress" ? 86400000 : 0),
       c.artist ? created + 86400000 : 0, c.status === "done" ? created + 518400000 : 0,
-      c.status === "done" ? created + 604800000 : 0, output, c.status === "done" ? 1 : 0, c.id,
+      output, c.status === "done" ? 1 : 0, c.id,
     ]);
   }
 }

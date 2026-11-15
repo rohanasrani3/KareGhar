@@ -1,24 +1,34 @@
 "use client";
 import { signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-export function Logout({ label }: { label: string }) {
+function rememberNotice(value: "login" | "logout") {
+  try { sessionStorage.setItem("kareghar-auth-notice", value); } catch { /* Navigation must work when browser storage is disabled. */ }
+}
+export function Logout({ label, hi = false }: { label: string; hi?: boolean }) {
   const [pending, setPending] = useState(false);
-  return <button type="button" disabled={pending} onClick={async () => {
+  const [error, setError] = useState(false);
+  return <><button type="button" disabled={pending} onClick={async () => {
     setPending(true);
+    setError(false);
     try {
       const result = await signOut({ redirect: false, callbackUrl: "/" });
-      sessionStorage.setItem("kareghar-auth-notice", "logout");
+      rememberNotice("logout");
       window.location.assign(result.url || "/");
+    } catch {
+      setError(true);
     } finally {
       setPending(false);
     }
-  }}>{label}</button>;
+  }}>{label}</button>{error && <p role="alert">{hi ? "लॉग आउट नहीं हो सका। फिर प्रयास करें।" : "Could not log out. Please try again."}</p>}</>;
 }
 export function AuthNotice({ hi }: { hi: boolean }) {
   const [notice, setNotice] = useState<"login" | "logout" | null>(null);
   useEffect(() => {
-    const value = sessionStorage.getItem("kareghar-auth-notice");
-    sessionStorage.removeItem("kareghar-auth-notice");
+    let value: string | null;
+    try {
+      value = sessionStorage.getItem("kareghar-auth-notice");
+      sessionStorage.removeItem("kareghar-auth-notice");
+    } catch { return; }
     if (value !== "login" && value !== "logout") return;
     setNotice(value);
     const timer = window.setTimeout(() => setNotice(null), 5000);
@@ -49,7 +59,7 @@ export function Login({ hi, onboarding = false }: { hi: boolean; onboarding?: bo
             redirect: false,
           });
           if (result?.ok) {
-            sessionStorage.setItem("kareghar-auth-notice", "login");
+            rememberNotice("login");
             window.location.assign(onboarding ? "/profile?tab=portfolio&onboarding=1" : "/");
           }
           else setError(true);
@@ -62,7 +72,7 @@ export function Login({ hi, onboarding = false }: { hi: boolean; onboarding?: bo
     >
       <label>
         {hi ? "उपयोगकर्ता नाम" : "Username"}
-        <input name="username" required autoComplete="username" />
+        <input name="username" required autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={40} />
       </label>
       <label>
         {hi ? "पासवर्ड" : "Password"}
@@ -70,6 +80,7 @@ export function Login({ hi, onboarding = false }: { hi: boolean; onboarding?: bo
           name="password"
           type="password"
           required
+          maxLength={128}
           autoComplete="current-password"
         />
       </label>

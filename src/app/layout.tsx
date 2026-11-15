@@ -15,6 +15,10 @@ const notoDeva = Noto_Sans_Devanagari({ variable: "--font-noto-deva", subsets: [
 export const metadata: Metadata = {
   title: { default: "KareGhar", template: "%s · KareGhar" },
   description: "Empowering artisans. Enabling businesses",
+  icons: {
+    icon: { url: "/kareghar-icon.png", type: "image/png", sizes: "256x256" },
+    shortcut: "/favicon.ico",
+  },
 };
 export default async function RootLayout({
   children,
@@ -27,7 +31,7 @@ export default async function RootLayout({
       <body>
         <a href="#main-content" className="skip-link">{lang === "hi" ? "मुख्य सामग्री पर जाएँ" : "Skip to content"}</a>
         <SiteHeader />
-        <main id="main-content" className="shell content">{children}</main>
+        <main id="main-content" className="shell content" tabIndex={-1}>{children}</main>
         <SiteFooter />
         <AuthNotice hi={lang === "hi"} />
       </body>

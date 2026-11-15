@@ -4,11 +4,12 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Logout } from "./session-controls";
 
-export function ProfileMenu({ labels, admin, artist = false, unread = 0 }: {
+export function ProfileMenu({ labels, admin, artist = false, unread = 0, hi = false }: {
   labels: { profile: string; view?: string; edit?: string; portfolio?: string; history?: string; security?: string; moderation: string; logout: string };
   admin: boolean;
   artist?: boolean;
   unread?: number;
+  hi?: boolean;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
@@ -31,7 +32,7 @@ export function ProfileMenu({ labels, admin, artist = false, unread = 0 }: {
       <Link href="/profile/history" onClick={close}>{labels.history ?? "Work history"}{unread > 0 && <span className="notification-count">{unread > 99 ? "99+" : unread}</span>}</Link>
       <Link href="/profile?tab=security" onClick={close}>{labels.security ?? "Security"}</Link>
       {admin && <Link href="/admin" onClick={close}>{labels.moderation}</Link>}
-      <Logout label={labels.logout} />
+      <Logout label={labels.logout} hi={hi} />
     </div>
   </details>;
 }

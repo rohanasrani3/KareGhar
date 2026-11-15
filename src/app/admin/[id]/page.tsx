@@ -5,6 +5,8 @@ import { moderateAccount } from "@/server/moderation-action";
 import { ActionForm } from "@/components/action-form";
 import { stateName } from "@/components/discovery";
 import { works } from "@/server/market";
+import { SocialLinks, parseProfileLinks } from "@/components/social-links";
+import { web } from "@/contract/schemas";
 export default async function Page({
   params,
 }: {
@@ -23,34 +25,31 @@ export default async function Page({
       <h1>{person.name}</h1>
       <p>
         @{person.username} ·{" "}
-        {person.suspended ? t("Suspended", "निलंबित") : t("Active", "सक्रिय")}
+        {person.deleted ? t("Deleted", "हटाया गया") : person.suspended ? t("Suspended", "निलंबित") : t("Active", "सक्रिय")}
       </p>
       {person.company && <p>{person.company}</p>}
-      {(JSON.parse(person.links) as string[]).map((link, i) => (
-        <p key={i}>
-          <a href={link}>{link}</a>
-        </p>
-      ))}
+      <SocialLinks links={parseProfileLinks(person.links)} />
       {portfolio.length > 0 && (
         <>
           <h2>{t("Portfolio", "पोर्टफ़ोलियो")}</h2>
           {portfolio.map((w) => (
             <p key={w.id}>
-              <a href={w.url}>{w.title}</a>
+              {(w.url.startsWith("/") && !w.url.startsWith("//")) || web.safeParse(w.url).success ? <a href={w.url}>{w.title}</a> : w.title}
             </p>
           ))}
         </>
       )}
-      <h2>{t("Commission history", "कमीशन इतिहास")}</h2>
-      {!jobs.length && <p>{t("No commissions.", "कोई कमीशन नहीं है।")}</p>}
+      <h2>{t("Work history", "कार्य इतिहास")}</h2>
+      {!jobs.length && <p>{t("No demands.", "कोई माँग नहीं है।")}</p>}
       {jobs.map((c) => (
         <p key={c.id}>
-          <Link href={"/commissions/" + c.id}>{c.title}</Link> ·{" "}
+          {!c.paused && c.status !== "progress" ? <Link href={"/commissions/" + c.id}>{c.title}</Link> : c.title}{", "}
           {stateName(c.status, lang === "hi")}
           {c.paused ? ", " + t("Paused", "रुका हुआ") : ""}
         </p>
       ))}
-      {admin.id !== id && !person.sample && (
+      {Boolean(person.deleted) && <p>{t("This account was deleted. Its retained history cannot be restored as an active account.", "यह खाता हटाया गया था। सुरक्षित इतिहास से इसे सक्रिय खाते के रूप में बहाल नहीं किया जा सकता।")}</p>}
+      {admin.id !== id && !person.sample && !person.deleted && (
         <>
           <h2>
             {person.suspended
@@ -60,12 +59,12 @@ export default async function Page({
           <p>
             {person.suspended
               ? t(
-                  "Restoring allows a fresh login and resumes eligible commissions.",
-                  "बहाली के बाद सदस्य फिर लॉग इन कर सकता है और पात्र कमीशन जारी रहेंगे।",
+                  "Restoring allows a fresh login and resumes eligible demands.",
+                  "बहाली के बाद सदस्य फिर लॉग इन कर सकता है और पात्र माँगें फिर से जारी होंगी।",
                 )
               : t(
-                  "Suspension signs this user out, hides their listings and pauses actions on their commissions.",
-                  "निलंबन से सदस्य लॉग आउट होगा, उसकी लिस्टिंग छिपेंगी और कमीशन पर कार्रवाई रुकेगी।",
+                  "Suspension signs this user out, hides their listings and pauses actions on their demands.",
+                  "निलंबन से सदस्य लॉग आउट होगा, उसकी लिस्टिंग छिपेंगी और माँग पर कार्रवाई रुकेगी।",
                 )}
           </p>
           <ActionForm

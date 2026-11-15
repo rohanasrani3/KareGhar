@@ -1,79 +1,74 @@
 import Link from "next/link";
 import { language } from "@/i18n/language";
 import { query } from "@/server/db";
-import { stateName } from "@/components/discovery";
 
 type Stats = {
   posted: number;
-  done: number;
+  selected: number;
   artists: number;
   customers: number;
   fees: number;
   finding: number;
-  progress: number;
   samples: number;
 };
 export default async function Page() {
-  const [{ t, lang }, [s]] = await Promise.all([
+  const [{ t }, [s]] = await Promise.all([
     language(),
     query<Stats>(`SELECT COUNT(*) AS posted,
-    COUNT(CASE WHEN status='done' AND output<>'' THEN 1 END) AS done,
-    COUNT(DISTINCT CASE WHEN status='done' AND output<>'' THEN artist END) AS artists,
-    COUNT(DISTINCT customer) AS customers, COALESCE(SUM(CASE WHEN status='done' AND output<>'' THEN fee ELSE 0 END),0) AS fees,
+    COUNT(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN 1 END) AS selected,
+    COUNT(DISTINCT CASE WHEN status IN ('progress','done') THEN artist END) AS artists,
+    COUNT(DISTINCT customer) AS customers, COALESCE(SUM(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN fee ELSE 0 END),0) AS fees,
     COUNT(CASE WHEN sample=1 THEN 1 END) AS samples,
-    COUNT(CASE WHEN status='finding' THEN 1 END) AS finding, COUNT(CASE WHEN status='progress' THEN 1 END) AS progress
-    FROM commissions`),
+    COUNT(CASE WHEN status='finding' THEN 1 END) AS finding
+    FROM demands`),
   ]);
   const money = (n: number) => "₹" + Number(n).toLocaleString("en-IN");
-  const completion = Number(s.posted)
-    ? Math.round((100 * s.done) / s.posted)
-    : 0;
   const totals = [
     [
-      t("Accepted work value", "स्वीकृत कार्य का मूल्य"),
+      t("Agreed demand value", "माँगों का तय मूल्य"),
       money(s.fees),
       t(
-        "The agreed fees for work customers have accepted. Payments take place directly between the customer and artist.",
-        "ग्राहकों द्वारा स्वीकार किए गए कार्य का तय शुल्क। ग्राहक सीधे कलाकार को भुगतान करते हैं।",
+        "The agreed fees for demands with a selected artist. Work and payments take place directly between the customer and artist; these are not verified earnings.",
+        "चुने गए कलाकार वाली माँगों का तय शुल्क। काम और भुगतान ग्राहक व कलाकार के बीच सीधे होते हैं; यह सत्यापित आय नहीं है।",
       ),
     ],
     [
-      t("Commissions completed", "पूर्ण कमीशन"),
-      s.done,
+      t("Demands with an artist selected", "कलाकार चुनी गई माँगें"),
+      s.selected,
       t(
-        "A commission counts once finished work is submitted and the customer accepts it.",
-        "तैयार कार्य जमा होने और ग्राहक द्वारा स्वीकार किए जाने पर कमीशन गिना जाता है।",
+        "A demand counts when its customer selects an artist's proposal. This records a connection, without verifying delivery or payment.",
+        "ग्राहक द्वारा कलाकार का प्रस्ताव चुनने पर माँग गिनी जाती है। यह जुड़ाव दर्शाता है; कार्य की डिलीवरी या भुगतान की पुष्टि नहीं करता।",
       ),
     ],
     [
-      t("Artists with accepted work", "स्वीकृत कार्य वाले कलाकार"),
+      t("Artists connected", "जुड़े हुए कलाकार"),
       s.artists,
       t(
-        "Each artist with at least one accepted commission counts once, even if the output is private.",
-        "कम से कम एक स्वीकृत कमीशन वाले हर कलाकार को एक बार गिना जाता है, भले ही कार्य निजी हो।",
+        "Each artist selected for at least one demand counts once.",
+        "कम से कम एक माँग के लिए चुने गए हर कलाकार को एक बार गिना जाता है।",
       ),
     ],
     [
-      t("Customers served", "सेवा प्राप्त ग्राहक"),
+      t("Customers posting demands", "माँग पोस्ट करने वाले ग्राहक"),
       s.customers,
       t(
-        "Each customer who has posted a commission counts once.",
-        "कमीशन पोस्ट करने वाले हर ग्राहक को एक बार गिना जाता है।",
+        "Each customer who has posted a demand counts once.",
+        "माँग पोस्ट करने वाले हर ग्राहक को एक बार गिना जाता है।",
       ),
     ],
   ] as const;
   return (
-    <>
+    <>
       <h1>
         {t("What the pilot has done so far", "पायलट की अब तक की उपलब्धियाँ")}
       </h1>
       <p className="page-lead">
         {t(
-          "A shared picture of the briefs, collaborations, and finished work in our community.",
-          "हमारे समुदाय के अनुरोधों, सहयोग और तैयार कार्यों की एक साझा तस्वीर।",
+          "A shared picture of the demands and artist connections in our community.",
+          "हमारे समुदाय की माँगों और कलाकारों से बने जुड़ाव की एक साझा तस्वीर।",
         )}
       </p>
-      {Number(s.samples) > 0 && <aside className="pilot-note"><span className="sample">{t("Pilot, sample data included", "पायलट, नमूना डेटा शामिल")}</span><p>{t("These totals include fictional examples to show how KareGhar works. Sample fees illustrate commission value; they are not real earnings or verified payments.", "इन आँकड़ों में KareGhar को समझाने के लिए काल्पनिक उदाहरण शामिल हैं। नमूना शुल्क कमीशन का मूल्य दिखाते हैं; वे वास्तविक आय या सत्यापित भुगतान नहीं हैं।")}</p></aside>}
+      {Number(s.samples) > 0 && <aside className="pilot-note"><span className="sample">{t("Pilot, sample data included", "पायलट, नमूना डेटा शामिल")}</span><p>{t("These totals include fictional examples to show how KareGhar works. Sample fees illustrate demand value; they are not real earnings or verified payments.", "इन आँकड़ों में KareGhar को समझाने के लिए काल्पनिक उदाहरण शामिल हैं। नमूना शुल्क माँग का मूल्य दिखाते हैं; वे वास्तविक आय या सत्यापित भुगतान नहीं हैं।")}</p></aside>}
       <dl className="impact-totals">
         {totals.map(([label, value]) => (
           <div key={label}>
@@ -84,20 +79,18 @@ export default async function Page() {
       </dl>
       <div className="impact-panels">
         <section className="card">
-          <h2>{t("Pipeline", "कमीशन की स्थिति")}</h2>
+          <h2>{t("Demand connections", "माँगों से जुड़ाव")}</h2>
           <dl>
             {[
-              [t("Commissions posted", "पोस्ट किए गए कमीशन"), s.posted],
-              ...(["finding", "progress", "done"] as const).map((k) => [
-                stateName(k, lang === "hi"),
-                s[k],
-              ]),
+              [t("Demands posted", "पोस्ट की गई माँगें"), s.posted],
+              [t("Finding an artist", "कलाकार की तलाश"), s.finding],
+              [t("Artist selected", "कलाकार चुना गया"), s.selected],
               [
                 t(
-                  "Average fee per completed commission",
-                  "प्रति पूर्ण कमीशन औसत शुल्क",
+                  "Average agreed fee",
+                  "औसत तय शुल्क",
                 ),
-                Number(s.done) ? money(Math.round(s.fees / s.done)) : "—",
+                Number(s.selected) ? money(Math.round(s.fees / s.selected)) : "—",
               ],
             ].map(([label, value]) => (
               <div className="impact-row" key={label}>
@@ -106,12 +99,6 @@ export default async function Page() {
               </div>
             ))}
           </dl>
-          <div className="impact-row">
-            <span>
-              {t("Completion rate", "पूर्णता दर")}
-            </span>
-            <span>{completion}%</span>
-          </div>
         </section>
         <section className="card">
           <h2>{t("How we count", "गणना की विधि")}</h2>

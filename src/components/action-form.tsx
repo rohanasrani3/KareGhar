@@ -14,13 +14,15 @@ const messages: Record<string, [string, string]> = {
     "Choose a supported file up to 5 MB.",
     "5 MB तक की समर्थित फ़ाइल चुनें।",
   ],
+  limited: ["Too many attempts. Try again in 15 minutes.", "बहुत अधिक प्रयास। 15 मिनट बाद फिर कोशिश करें।"],
+  unavailable: ["We could not save your file. Please try again.", "आपकी फ़ाइल सहेजी नहीं जा सकी। कृपया फिर कोशिश करें।"],
   conflict: [
     "This action is no longer available. Refresh the page.",
     "यह कार्रवाई अब उपलब्ध नहीं है। पेज रीफ़्रेश करें।",
   ],
   saved: ["Saved.", "सहेजा गया।"],
   expired: ["The 15-minute editing window has ended.", "संपादन के लिए 15 मिनट का समय समाप्त हो गया है।"],
-  active: ["Complete or cancel your active commissions before deleting your account.", "खाता हटाने से पहले सक्रिय कमीशन पूरे करें या रद्द करें।"],
+  active: ["Complete or cancel your active demands before deleting your account.", "खाता हटाने से पहले सक्रिय माँगें पूरी करें या रद्द करें।"],
   acknowledged: ["Please confirm that you will contact the other person before starting work.", "कृपया पुष्टि करें कि काम शुरू करने से पहले आप दूसरे व्यक्ति से संपर्क करेंगे।"],
 };
 export function ActionForm({

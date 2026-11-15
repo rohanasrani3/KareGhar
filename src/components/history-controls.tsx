@@ -20,7 +20,11 @@ export function ProposalEditor({ id, fee, hi, proposal, now }: { id: string; fee
 export function MessageComposer({ id, artist, hi }: { id: string; artist: string; hi: boolean }) {
   const [body, setBody] = useState("");
   const router = useRouter();
-  return <ActionForm action={sendMessage} lang={hi ? "hi" : "en"} label={hi ? "संदेश भेजें" : "Send message"} onSuccess={() => { setBody(""); router.refresh(); }} className="message-composer">
+  return <ActionForm action={async (state, data) => {
+    const result = await sendMessage(state, data);
+    if (result === "saved") setBody((draft) => draft === data.get("body") ? "" : draft);
+    return result;
+  }} lang={hi ? "hi" : "en"} label={hi ? "संदेश भेजें" : "Send message"} onSuccess={() => router.refresh()} className="message-composer">
     <input type="hidden" name="id" value={id} /><input type="hidden" name="artist" value={artist} />
     <label>{hi ? "आपका संदेश" : "Your message"}<textarea name="body" value={body} onChange={(e) => setBody(e.target.value)} maxLength={4000} required rows={3} placeholder={hi ? "काम, समय-सीमा और शर्तों पर बात करें…" : "Discuss the work, timing and terms…"} /></label>
   </ActionForm>;

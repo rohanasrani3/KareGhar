@@ -109,7 +109,7 @@
 .read-updates-form { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: .5rem; margin: 0; }
 .read-updates-form .button { font-size: .75rem; padding: .5rem .75rem; border: 1px solid var(--color-line); background: var(--color-card); color: var(--color-indigo); }
 .read-updates-form [role="status"] { font-size: .75rem; }
-.project-progress { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; padding: 1.3rem 0 2rem; margin: 0 0 1.5rem; border-bottom: 1px solid var(--color-line); }
+.project-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); list-style: none; padding: 1.3rem 0 2rem; margin: 0 0 1.5rem; border-bottom: 1px solid var(--color-line); }
 .project-progress li { display: flex; flex-direction: column; align-items: flex-start; position: relative; min-width: 0; gap: .45rem; padding-right: .8rem; color: var(--color-muted); }
 .project-progress li::after { content: ""; position: absolute; top: 15px; left: 30px; right: 0; height: 1px; background: var(--color-line-strong); }
 .project-progress li:last-child::after { display: none; }
@@ -123,14 +123,15 @@
 .reference-details { margin-top: 1rem; }
 .reference-details summary { font-size: .82rem; color: var(--color-indigo); cursor: pointer; padding: .5rem 0; }
 .reference-details img { margin-top: .5rem; }
-.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-bottom: 1.2rem; }
-.panel-heading h2 { margin: 0; }
+.panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; margin-bottom: 1.2rem; }
+.panel-heading h2 { flex: 1 0 auto; max-width: 100%; margin: 0; }
 .proposal-list { display: grid; gap: 1rem; }
 .proposal-card { border: 1px solid var(--color-line); border-radius: 0; padding: 1.1rem; }
 .proposal-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .7rem; }
+.proposal-top > div { min-width: 0; overflow-wrap: anywhere; }
 .proposal-top a { font-size: .95rem; font-weight: 600; }
 .proposal-top small { display: block; margin-top: .25rem; font-size: .75rem; }
-.proposal-top > strong { font-size: .95rem; var(--color-on-indigo)-space: nowrap; }
+.proposal-top > strong { font-size: .95rem; white-space: nowrap; }
 .proposal-card > p { font-size: .86rem; }
 .proposal-card .proposal-contact { font-size: .75rem; }
 .proposal-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem; font-size: .8rem; margin-top: .9rem; }
@@ -151,7 +152,7 @@
 .content .conversation-tabs a[aria-current="page"] { border-color: var(--color-indigo); }
 .conversation-with { font-size: .75rem; margin: 1rem 0; }
 .message-list { display: grid; gap: .8rem; max-height: 520px; overflow-y: auto; overscroll-behavior: contain; padding: .3rem 0 .8rem; }
-.message-bubble { max-width: 92%; justify-self: start; padding: .8rem 1rem; border-radius: 0; background: var(--color-paper); }
+.message-bubble { min-width: 0; max-width: 92%; justify-self: start; padding: .8rem 1rem; border-radius: 0; background: var(--color-paper); overflow-wrap: anywhere; }
 .message-bubble.own-message { justify-self: end; background: var(--color-indigo-tint); border-radius: 0; }
 .message-bubble > div { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; }
 .message-bubble strong { font-size: .75rem; font-weight: 600; }

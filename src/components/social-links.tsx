@@ -7,7 +7,23 @@ export const SOCIALS = [
 ] as const;
 export type SocialKey = (typeof SOCIALS)[number]["key"];
 
+function publicUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
+  } catch { return false; }
+}
+
+export function parseProfileLinks(value: string): string[] {
+  try {
+    const links: unknown = JSON.parse(value);
+    return Array.isArray(links) ? [...new Set(links.filter(publicUrl))] : [];
+  } catch { return []; }
+}
+
 export function socialKey(url: string): SocialKey | undefined {
+  if (!publicUrl(url)) return undefined;
   try {
     const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
     return SOCIALS.find((site) => site.hosts.some((domain) => host === domain || host.endsWith("." + domain)))?.key;
@@ -30,7 +46,8 @@ export function SocialIcon({ name }: { name: SocialKey }) {
 }
 
 export function SocialLinks({ links }: { links: string[] }) {
-  const recognized = links.map((url) => ({ url, key: socialKey(url) })).filter((item) => item.key);
-  const other = links.filter((url) => !socialKey(url));
+  const safeLinks = [...new Set(links.filter(publicUrl))];
+  const recognized = safeLinks.map((url) => ({ url, key: socialKey(url) })).filter((item) => item.key);
+  const other = safeLinks.filter((url) => !socialKey(url));
   return <>{recognized.length > 0 && <div className="social-links">{recognized.map(({ url, key }) => <a key={url} href={url} target="_blank" rel="me noreferrer noopener" aria-label={SOCIALS.find((site) => site.key === key)?.label} title={SOCIALS.find((site) => site.key === key)?.label}><SocialIcon name={key!} /></a>)}</div>}{other.map((url) => <p className="external-profile-link" key={url}><a href={url} target="_blank" rel="me noreferrer noopener">{url}</a></p>)}</>;
 }

@@ -1,21 +1,24 @@
+import { Rating } from "@/components/rating";
 import { DirectoryTile } from "@/components/directory-tile";
 import { artists, forms } from "@/server/market";
 import { Filters, Sample } from "@/components/discovery";
 import { language } from "@/i18n/language";
 import { viewer } from "@/server/auth";
 import Link from "next/link";
+import { directoryFilters } from "@/lib/directory-filters";
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string; form?: string }>;
 }) {
-  const params = await searchParams;
-  const [all, people, { t, lang }, user] = await Promise.all([
+  const requestedParams = await searchParams;
+  const [all, { t, lang }, user] = await Promise.all([
     forms(),
-    artists(params),
     language(),
     viewer(),
   ]);
+  const params = directoryFilters(all, requestedParams);
+  const people = await artists(params);
   let last = -1,
     rank = 0;
   const ranked = people.map((person, i) => {
@@ -26,7 +29,7 @@ export default async function Page({
   const categoryName = all.find((form) => form.id === params.form)?.[lang === "hi" ? "hi" : "name"];
   return (
     <>
-      <div className="page-heading"><div>
+      <div className="page-heading"><div>
       <h1>{t("Find your kind of craft.", "अपनी पसंद की कला खोजें।")}</h1>
       <p className="page-lead">
         {t(
@@ -36,7 +39,7 @@ export default async function Page({
       </p>
       </div></div>
       <Filters all={all} params={params} />
-      <div className="results-bar"><p>{ranked.length} {t("artists", "कलाकार")}{categoryName ? `, ${categoryName}` : ""}</p><p>{t("Ranked by accepted finished work", "स्वीकृत तैयार कार्य के अनुसार रैंकिंग")}</p></div>
+      <div className="results-bar"><p>{ranked.length} {t("artists", "कलाकार")}{categoryName ? `, ${categoryName}` : ""}</p><p>{t("Ranked by submitted finished work", "जमा तैयार कार्य के अनुसार रैंकिंग")}</p></div>
       <div className="directory-grid">
         {ranked.map((p) => {
           const count = Number(p.completed);
@@ -69,6 +72,7 @@ export default async function Page({
                   </>
               }
             >
+              <Rating score={p.rating_average} count={p.rating_count} hi={lang === "hi"} />
               {names && <p className="tile-description">{names}</p>}
               {p.company && <small>{p.company}</small>}
               {p.contact && <small className="contact-inline">{t("Contact", "संपर्क")}: {p.contact}</small>}

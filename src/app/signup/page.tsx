@@ -5,7 +5,7 @@ import Link from "next/link";
 export default async function Page() {
   const { t, lang } = await language();
   return (
-    <section className="auth-page">
+    <section className="auth-page">
       <h1>{t("Create an account", "खाता बनाएँ")}</h1>
       <p>{t("Find your next collaborator. Artists can set up their portfolio after signing in.", "अपना अगला सहयोगी खोजें। कलाकार लॉग इन करने के बाद पोर्टफ़ोलियो बना सकते हैं।")}</p>
       <ActionForm
@@ -26,7 +26,7 @@ export default async function Page() {
         </label>
         <label>
           {t("Email", "ईमेल")}
-          <input type="email" name="email" autoComplete="email" required />
+          <input type="email" name="email" autoComplete="email" maxLength={254} autoCapitalize="none" spellCheck={false} required />
         </label>
         <label>
           {t(
@@ -36,6 +36,10 @@ export default async function Page() {
           <input
             name="username"
             autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={3}
+            maxLength={40}
             pattern="[A-Za-z0-9_]{3,40}"
             required
           />
