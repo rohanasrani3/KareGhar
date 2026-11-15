@@ -12,24 +12,47 @@ interface Database {
   query<T>(sql: string, values?: Value[]): Promise<T[]>;
   transaction<T>(work: (query: Query) => Promise<T>): Promise<T>;
 }
+const SEED_WAIT_MS = 8000;
+const SEED_LIMIT_MS = 60000;
+const PG_OPTIONS = { prepare: false, connect_timeout: 10, idle_timeout: 20, max_lifetime: 60 * 10 } as const;
+const QUERY_TIMEOUT_MS = 15000;
+
+/**
+ * A PostgreSQL query that waits on a lock (for example one held by a transaction
+ * whose serverless instance was frozen) never errors on its own and would hold the
+ * request until the platform's 300 s limit. Cancel it on the server instead and
+ * fail with a logged error.
+ */
+function bounded<T>(pending: Promise<T> & { cancel?: () => unknown }, sql: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      try { pending.cancel?.(); } catch { /* the query may already have settled */ }
+      const error = new Error(`Database query exceeded ${QUERY_TIMEOUT_MS / 1000}s: ${sql.replace(/\s+/g, " ").slice(0, 120)}`);
+      console.error("[kareghar]", error.message);
+      reject(error);
+    }, QUERY_TIMEOUT_MS);
+  });
+  return Promise.race([pending, timeout]).finally(() => clearTimeout(timer));
+}
 const globalDb = globalThis as typeof globalThis & {
   karegharDb?: Promise<Database>;
 };
 
 async function connect(): Promise<Database> {
+  const opened = Date.now();
   let database: Database;
   if (process.env.DATABASE_URL) {
-    const client = postgres(process.env.DATABASE_URL, {
-      prepare: false,
-      max: 4,
-    });
+    // Serverless-friendly: fail fast instead of hanging until the platform timeout,
+    // and release idle pooler connections so frozen instances don't exhaust the pool.
+    const client = postgres(process.env.DATABASE_URL, { ...PG_OPTIONS, max: 4 });
     database = {
       async query<T>(sql: string, values: Value[] = []) {
-        return Array.from(await client.unsafe(sql, values)) as T[];
+        return Array.from(await bounded(client.unsafe(sql, values), sql)) as T[];
       },
       async transaction<T>(work: (query: Query) => Promise<T>): Promise<T> {
         const result = await client.begin(async (connection) => work(async <R>(sql: string, values: Value[] = []) =>
-          Array.from(await connection.unsafe(sql, values)) as R[]));
+          Array.from(await bounded(connection.unsafe(sql, values), sql)) as R[]));
         return result as T;
       },
     };
@@ -78,13 +101,36 @@ async function connect(): Promise<Database> {
       }),
     };
   }
-  for (const form of ART_FORMS)
-    await database.query(
-      "INSERT INTO forms VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING",
-      [form.id, form.category, form.name, form.hi],
-    );
-  if (!process.env.DATABASE_URL || process.env.KAREGHAR_SEED_SAMPLES === "1")
-    await seedSamples((sql, values) => database.query(sql, values));
+  // One round trip for the whole seed catalogue (this runs on every cold start).
+  await database.query(
+    "INSERT INTO forms VALUES " + ART_FORMS.map((_, i) => `($${i * 4 + 1},$${i * 4 + 2},$${i * 4 + 3},$${i * 4 + 4})`).join(",") + " ON CONFLICT DO NOTHING",
+    ART_FORMS.flatMap((form) => [form.id, form.category, form.name, form.hi]),
+  );
+  if (process.env.DATABASE_URL) console.log(`[kareghar] database ready in ${Date.now() - opened} ms`);
+  if (!process.env.DATABASE_URL) await seedSamples((sql, values) => database.query(sql, values));
+  else if (process.env.KAREGHAR_SEED_SAMPLES === "1") {
+    // Hosted: the seed gets its own small connection so its queued statements can
+    // never sit in front of page queries. The whole run is capped at SEED_LIMIT_MS,
+    // and closing that connection cancels whatever it still has queued. The seed
+    // is idempotent and records its version when finished, so a run cut short
+    // resumes on a later cold start. Pages wait for it at most SEED_WAIT_MS.
+    const seedClient = postgres(process.env.DATABASE_URL, { ...PG_OPTIONS, max: 2 });
+    const started = Date.now();
+    let limit: ReturnType<typeof setTimeout> | undefined;
+    const seeding = Promise.race([
+      seedSamples((sql, values) => bounded(seedClient.unsafe(sql, values ?? []), sql)),
+      new Promise((_, reject) => { limit = setTimeout(() => reject(new Error(`sample seed exceeded ${SEED_LIMIT_MS / 1000}s`)), SEED_LIMIT_MS); }),
+    ])
+      .then(
+        () => console.log(`[kareghar] sample seed finished in ${Date.now() - started} ms`),
+        (error) => console.error("[kareghar] sample seed stopped:", error instanceof Error ? error.message : error),
+      )
+      .finally(() => {
+        clearTimeout(limit);
+        return seedClient.end({ timeout: 0 }).catch(() => undefined);
+      });
+    await Promise.race([seeding, new Promise((resolve) => setTimeout(resolve, SEED_WAIT_MS))]);
+  }
   return database;
 }
 export async function transaction<T>(work: (query: Query) => Promise<T>): Promise<T> {
