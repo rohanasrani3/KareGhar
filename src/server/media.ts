@@ -51,7 +51,12 @@ export async function saveMedia(file: File, photo: boolean) {
       headers: { ...headers, "Content-Type": formats[ext] },
       body: new Uint8Array(bytes),
     });
-    if (!response.ok) throw Error("Media upload failed");
+    if (!response.ok) {
+      // Supabase explains the failure in the body, e.g. "Bucket not found" or an invalid key.
+      const reason = (await response.text().catch(() => "")).slice(0, 300);
+      console.error(`[kareghar] media upload failed: ${response.status} ${reason}`);
+      throw Error("Media upload failed");
+    }
   } else {
     await mkdir(mediaDirectory(), { recursive: true });
     await writeFile(join(mediaDirectory(), key), bytes);

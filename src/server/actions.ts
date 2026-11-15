@@ -68,7 +68,7 @@ export async function updateProfile(_: string, data: FormData) {
   const photo = data.get("photo");
   let key: string | null = null;
   if (photo instanceof File && photo.size) {
-    try { key = await saveMedia(photo, true); } catch { return "unavailable"; }
+    try { key = await saveMedia(photo, true); } catch (error) { console.error("[kareghar] saveMedia:", error); return "unavailable"; }
     if (!key) return "file";
   }
   const photoValue = key ?? (data.get("removePhoto") === "on" ? "" : null);
@@ -143,7 +143,7 @@ async function saveWork(data: FormData, updating: boolean) {
   let key: string | null = null;
   const file = data.get("file");
   if (file instanceof File && file.size) {
-    try { key = await saveMedia(file, false); } catch { return "unavailable"; }
+    try { key = await saveMedia(file, false); } catch (error) { console.error("[kareghar] saveMedia:", error); return "unavailable"; }
     if (!key) return "file";
   }
   const rawUrl = String(data.get("url") ?? "").trim();
@@ -188,7 +188,7 @@ export async function postCommission(_: string, data: FormData) {
   let key: string | null = null;
   const reference = data.get("reference");
   if (reference instanceof File && reference.size) {
-    try { key = await saveMedia(reference, true); } catch { return "unavailable"; }
+    try { key = await saveMedia(reference, true); } catch (error) { console.error("[kareghar] saveMedia:", error); return "unavailable"; }
     if (!key) return "file";
   }
   let result: string;
@@ -221,7 +221,7 @@ export async function commissionAction(_: string, data: FormData) {
     if (!allowed || user.role !== "artist") return "denied";
     const file = data.get("file");
     if (!(file instanceof File)) return "file";
-    try { key = await saveMedia(file, false); } catch { return "unavailable"; }
+    try { key = await saveMedia(file, false); } catch (error) { console.error("[kareghar] saveMedia:", error); return "unavailable"; }
     if (!key) return "file";
     const accepted: Record<string, RegExp> = { image: /\.(png|jpg|webp)$/, audio: /\.(mp3|wav)$/, video: /\.mp4$/ };
     if (accepted[allowed.output_type] && !accepted[allowed.output_type].test(key)) {
