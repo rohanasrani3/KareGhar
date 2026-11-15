@@ -8,7 +8,9 @@ import { SiteFooter } from "@/components/site-footer";
 
 // Direction D ("Loom, photographed"): Caslon display over Hanken Grotesk, with Devanagari partners for Hindi.
 const caslon = Libre_Caslon_Display({ variable: "--font-caslon", subsets: ["latin"], weight: "400" });
-const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"], weight: ["400", "500", "600"] });
+// Variable font (no `weight`): Google serves fixed Hanken weights from extensionless
+// /l/font?kit= URLs, which next/font cannot parse on a clean (Vercel) build.
+const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"] });
 const tiro = Tiro_Devanagari_Hindi({ variable: "--font-tiro", subsets: ["devanagari", "latin"], weight: "400" });
 const notoDeva = Noto_Sans_Devanagari({ variable: "--font-noto-deva", subsets: ["devanagari"], weight: ["400", "500", "600"] });
 
