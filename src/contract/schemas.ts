@@ -21,6 +21,7 @@ export const signupSchema = z.object({
     .regex(/^[A-Za-z0-9_]{3,40}$/),
   email,
   name: short,
+  contact: z.string().trim().min(1).max(240),
   role,
   password,
 });

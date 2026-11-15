@@ -18,7 +18,7 @@ export default async function Page() {
     COUNT(DISTINCT CASE WHEN status IN ('progress','done') THEN artist END) AS artists,
     COUNT(DISTINCT customer) AS customers, COALESCE(SUM(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN fee ELSE 0 END),0) AS fees,
     COUNT(CASE WHEN status='finding' THEN 1 END) AS finding
-    FROM demands WHERE sample=0`),
+    FROM demands`),
   ]);
   const money = (n: number) => "₹" + Number(n).toLocaleString("en-IN");
   const totals = [
@@ -66,7 +66,12 @@ export default async function Page() {
           "हमारे समुदाय की माँगों और कलाकारों से बने जुड़ाव की एक साझा तस्वीर।",
         )}
       </p>
-      <p className="field-help">{t("Counts real activity only. Sample listings on the site are not included.", "केवल असली गतिविधि गिनी जाती है। साइट की नमूना सूचियाँ इसमें शामिल नहीं हैं।")}</p>
+      <p className="field-help">
+        {t(
+          "Includes real activity and sample data impact. Sample demands, artist connections and fees are included to show how the marketplace works. Sample fees are fictional.",
+          "इसमें वास्तविक गतिविधि और नमूना डेटा का प्रभाव शामिल है। बाज़ार कैसे काम करता है, यह दिखाने के लिए नमूना माँगें, कलाकारों से जुड़ाव और शुल्क भी गिने जाते हैं। नमूना शुल्क काल्पनिक हैं।",
+        )}
+      </p>
       <dl className="impact-totals">
         {totals.map(([label, value]) => (
           <div key={label}>
@@ -76,7 +81,7 @@ export default async function Page() {
         ))}
       </dl>
       <div className="impact-panels">
-        <section className="card">
+        <section className="card impact-connections">
           <h2>{t("Demand connections", "माँगों से जुड़ाव")}</h2>
           <dl>
             {[

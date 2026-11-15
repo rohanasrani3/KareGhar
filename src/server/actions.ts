@@ -40,8 +40,8 @@ export async function switchLanguage(data: FormData) {
 export async function register(_: string, data: FormData) {
   const parsed = signupSchema.safeParse(Object.fromEntries(data));
   if (!parsed.success) return "invalid";
-  const { username, email, name, role, password } = parsed.data;
-  const inserted = await query("INSERT INTO accounts(id,username,email,name,role,password_hash) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING id", [randomUUID(), username, email, name, role, await hash(password)]);
+  const { username, email, name, contact, role, password } = parsed.data;
+  const inserted = await query("INSERT INTO accounts(id,username,email,name,role,password_hash,contact) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING id", [randomUUID(), username, email, name, role, await hash(password), contact]);
   if (!inserted.length) return "taken";
   redirect(role === "artist" ? "/login?created=1&onboarding=artist" : "/login?created=1");
 }

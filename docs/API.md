@@ -35,7 +35,7 @@ The homepage process describes contact before selection and customer rating afte
 
 ## Impact definitions
 
-The page queries `demands`, including private demands and tagged samples. Selected demands have a non-null artist and status `progress` or `done`. Agreed demand value sums their fees; selected-demand count counts them; artists connected counts distinct selected artists. Customers posting demands counts distinct customers across all posted demands. Supporting rows show posted, Finding and selected counts, plus average agreed fee (value / selected count, or an em dash for zero).
+The page queries `demands`, including private demands and tagged samples, with no sample exclusion. Its English/Hindi notice explicitly says the totals include real activity and sample data impact and that sample fees are fictional. Selected demands have a non-null artist and status `progress` or `done`. Agreed demand value sums their fees; selected-demand count counts them; artists connected counts distinct selected artists. Customers posting demands counts distinct customers across all posted demands. Supporting rows show posted, Finding and selected counts, plus average agreed fee (value / selected count, or an em dash for zero).
 
 There is no completed-demand total, completion percentage or fee-per-completed-demand metric. Selection adds a current connection, cancellation removes it, and submission/rating does not itself change connection totals. These values record agreements, not verified payments, income or delivery. Samples remain clearly identified as fictional.
 
@@ -45,7 +45,7 @@ All actions below are exported by `src/server/actions.ts`. The shared signature 
 
 | Action | Form fields | Result |
 | --- | --- | --- |
-| `register` | `username`, `name`, `email`, `password`, `role=artist|customer` | Creates one role and redirects to login. Artist signup carries `onboarding=artist`, leading to portfolio setup after sign-in. |
+| `register` | `username`, `name`, private `email`, required public `contact` (1–240 characters after trimming), `password`, `role=artist|customer` | Rejects missing, blank or oversized contact before creating an account. Stores the explicitly supplied public contact separately from the private login email, creates one role and redirects to login. Artist signup carries `onboarding=artist`, leading to portfolio setup after sign-in. Existing accounts do not need a data migration. |
 | `updateProfile` | `name`, private `email`, `company`, optional `bio` (up to 2,000 characters), public `contact` (up to 240), `social_linkedin`, `social_instagram`, `social_facebook`, `social_x`, `social_youtube`, `linksExtra` JSON array, optional `photo`, `removePhoto=on` | Updates the current account. Social URLs must match their platform. Legacy `links` textarea input is also accepted. Photo uploads override removal; removal clears the photo. JPEG/PNG/WebP only, at most 5 MiB. |
 | `changePassword` | `current`, `password` | Verifies the existing password, rotates the hash and session revision, then redirects to login. Every existing session becomes invalid. |
 | `deleteAccount` | `current`, `confirm=DELETE` | Verifies the password and rejects active in-progress commissions (`active` feedback). Anonymizes the account and invalidates sessions, removes its public portfolio/profile and uploaded portfolio/photo files, and redirects to login. Shared commission/proposal/message history remains for the other participant. Admin self-deletion is unavailable. |
@@ -123,7 +123,9 @@ Run `npm run test:security` for persistent login/current-password budgets, inval
 
 ## Moderation
 
-`/admin` and `/admin/{account-id}` require an active admin session. Dashboards expose public profile fields and commission metadata. Moderation grants no access to private proposals, messages or unpublished media.
+`/admin` and `/admin/{account-id}` require an active admin session. Dashboards expose public profile fields, including bio and explicitly supplied public contact, and demand metadata. Missing contact shows a localized “Not shared yet” fallback. Login email and credentials are excluded. Moderation grants no access to private proposals, messages, selected quotations, individual private ratings or unpublished media.
+
+An admin created before migration 004 retains its account ID, username, password hash and `admin_grants` entry through migrations 004–008. New profile fields receive their normal empty defaults. Existing admins can log in and edit a profile with blank email/contact; the mandatory public-contact rule applies to customer/artist signup. Password changes invalidate old admin sessions while retaining the grant after a fresh login. This compatibility update needs no new schema migration.
 
 Account summaries distinguish deleted accounts from reversible suspensions. Deleted accounts have no restoration control. Demand summaries link to detail only when public discovery permits access; private or paused work remains metadata only.
 

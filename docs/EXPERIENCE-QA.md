@@ -4,6 +4,8 @@ Validated locally on 15 November 2026 with Node 24. The initial walkthrough used
 
 ## Automated checks
 
+Admin compatibility checks added on 16 November 2026 passed in `npm run test:security` and `node scripts/test-migrations.mjs`. Both start with an admin granted under migration 003 and preserve its credentials/grant through current upgrades. SQLite checks use the real authentication/profile/password/moderation modules, including historical blank admin email/contact, session invalidation, private demand access boundaries and owner-only rating/sharing guards. The PostgreSQL rehearsal verifies the preserved admin row and current profile/moderation SQL. The existing local admin was inspected read-only for schema and active-grant status; no password was extracted or changed. This does not verify a hosted Vercel database or a live admin browser session.
+
 - Dependencies: the initial baseline `npm ci` completed. A later clean reinstall hit a Windows lock on loaded native modules; `npm install` restored the dependencies successfully.
 - `npm run lint`: passed.
 - `npm run build`: passed, including TypeScript and route generation.

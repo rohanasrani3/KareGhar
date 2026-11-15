@@ -86,18 +86,35 @@ function load(file) {
 }
 const actions = load("src/server/actions.ts"), market = load("src/server/market.ts"), history = load("src/server/history.ts"), messaging = load("src/server/history-actions.ts"), media = load("src/app/api/media/[key]/route.ts");
 const { ART_FORMS } = load("src/contract/artForms.ts"), { seedSamples } = load("src/server/samples.ts");
-const impact = async () => {
+const impactMetrics = async () => {
   const html = renderToStaticMarkup(await load("src/app/impact/page.tsx").default());
   assert(!/Completion rate|Demands completed|Accepted work|accepted work/i.test(html));
+  assert(html.includes("Includes real activity and sample data impact."));
+  assert(html.includes("Sample fees are fictional."));
   const metric = (label) => {
     const value = html.match(new RegExp(`<dt>${label}</dt><dd>([^<]+)</dd>`))?.[1];
     assert(value, "Missing impact metric: " + label);
     return Number(value.replace(/[^0-9]/g, ""));
   };
-  return { selected: metric("Demands with an artist selected"), fees: metric("Agreed demand value") };
+  return {
+    selected: metric("Demands with an artist selected"), fees: metric("Agreed demand value"),
+    artists: metric("Artists connected"), customers: metric("Customers posting demands"),
+    posted: metric("Demands posted"), finding: metric("Finding an artist"), average: metric("Average agreed fee"),
+  };
+};
+const impact = async () => {
+  const { selected, fees } = await impactMetrics();
+  return { selected, fees };
 };
 for (const form of ART_FORMS) await q("INSERT INTO forms(id,category,name,hi) VALUES($1,$2,$3,$4)", [form.id, form.category, form.name, form.hi]);
+const beforeSamples = await impactMetrics();
 await seedSamples(q); await seedSamples(q);
+// The catalogue has 34 completed, 4 in-progress and 6 Finding sample demands.
+const sampleImpact = { posted: 44, selected: 38, artists: 17, customers: 9, fees: 406800, finding: 6 };
+const withSamples = await impactMetrics();
+for (const key of ["posted", "selected", "artists", "customers", "fees", "finding"])
+  assert.equal(withSamples[key], beforeSamples[key] + sampleImpact[key], "Sample impact missing from " + key);
+assert.equal(withSamples.average, Math.round(withSamples.fees / withSamples.selected));
 assert.equal((await q("SELECT COUNT(*) AS n FROM accounts WHERE sample=1"))[0].n, 26);
 assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1"))[0].n, 44);
 assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1 AND status='done' AND output<>''"))[0].n, 34);
@@ -114,6 +131,28 @@ for (const [id, role] of [["customer", "customer"], ["other-customer", "customer
   await q("INSERT INTO accounts(id,username,email,name,role,password_hash) VALUES($1,$1,$2,$1,$3,$4)", [id, id + "@example.invalid", role, pw]);
 const form = (values) => { const result = new FormData(); for (const [key, value] of Object.entries(values)) result.set(key, value instanceof File ? value : String(value)); return result; };
 const invoke = (action, values) => action("", form(values));
+for (const role of ["customer", "artist"]) {
+  const signup = { username: "signup_" + role, name: "New " + role, email: "signup_" + role + "@example.invalid", password: "signup-pass", role };
+  const countBefore = (await q("SELECT COUNT(*) AS n FROM accounts"))[0].n;
+  for (const contact of [undefined, "", "   ", "x".repeat(241)]) {
+    assert.equal(await invoke(actions.register, contact === undefined ? signup : { ...signup, contact }), "invalid");
+    assert.equal((await q("SELECT COUNT(*) AS n FROM accounts"))[0].n, countBefore);
+  }
+  const contact = role === "customer" ? "Public business email: orders@example.invalid" : "+91 98765 43210";
+  try { await invoke(actions.register, { ...signup, contact: "  " + contact + "  " }); assert.fail("Expected signup redirect"); }
+  catch (error) {
+    assert(error instanceof Redirect);
+    assert.equal(error.path, role === "artist" ? "/login?created=1&onboarding=artist" : "/login?created=1");
+  }
+  const [registered] = await q("SELECT contact,email,role,sample FROM accounts WHERE username=$1", [signup.username]);
+  assert.equal(registered.contact, contact);
+  assert.equal(registered.email, signup.email);
+  assert.equal(registered.role, role);
+  assert.equal(registered.sample, 0);
+  const publicProfile = await market.publicProfile(signup.username);
+  assert.equal(publicProfile.contact, contact);
+  assert.equal(Object.hasOwn(publicProfile, "email"), false);
+}
 await actAs("customer");
 let id;
 const deadline = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);

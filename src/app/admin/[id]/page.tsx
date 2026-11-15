@@ -28,6 +28,16 @@ export default async function Page({
         {person.deleted ? t("Deleted", "हटाया गया") : person.suspended ? t("Suspended", "निलंबित") : t("Active", "सक्रिय")}
       </p>
       {person.company && <p>{person.company}</p>}
+      <dl className="stack">
+        {person.bio && <div>
+          <dt><strong>{t("Bio", "परिचय")}</strong></dt>
+          <dd className="pre">{person.bio}</dd>
+        </div>}
+        <div>
+          <dt><strong>{t("Public contact", "सार्वजनिक संपर्क")}</strong></dt>
+          <dd className="pre">{person.contact || t("Not shared yet", "अभी साझा नहीं किया गया")}</dd>
+        </div>
+      </dl>
       <SocialLinks links={parseProfileLinks(person.links)} />
       {portfolio.length > 0 && (
         <>

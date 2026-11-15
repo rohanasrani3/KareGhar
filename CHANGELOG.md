@@ -2,6 +2,29 @@
 
 This records the final approved behavior and wording. Product rules live in [AGENTS.md](AGENTS.md), interfaces in [docs/API.md](docs/API.md), and evidence from completed checks in [docs/EXPERIENCE-QA.md](docs/EXPERIENCE-QA.md).
 
+## 2026-11-16
+
+### Admin compatibility with current accounts and demands
+
+- Moderation account details now show public bio/contact with English/Hindi labels and a missing-contact fallback. Private login email and credentials remain excluded.
+- Added legacy-admin regression coverage: create an admin using migrations 001/003, apply later migrations, preserve credentials/grants, log in, edit a profile with blank email/contact, change password and reject the old session while retaining moderation access after login.
+- PostgreSQL rehearsal now preserves an admin from migration 003 through 008 and exercises its current profile/moderation queries. Admin privacy checks cover private proposals, messages, quotations, individual ratings, media and owner-only rating/sharing actions.
+- The existing local `admin` account was inspected read-only and has the current account/demand schema, an active admin grant and a stored password. No existing passwords, account details or production records were changed. No new migration is required.
+- Validation passed: experience/security regressions, in-memory PostgreSQL migration rehearsal, lint, TypeScript and the local production build. Hosted admin login and browser layout were not verified.
+
+### Require public contact at signup
+
+- Customer and artist signup requires public contact of 1–240 characters after trimming. English/Hindi help explains public visibility and keeps the login email private. The server validates and stores contact during account creation; existing accounts are not backfilled and need no schema migration.
+- Documented Vercel production admin provisioning through the existing script: reuse an admin already in the same PostgreSQL database, or create a fresh production admin when the original exists only in local SQLite.
+- Validation: customer/artist signup regressions cover missing, blank and oversized contact, trimmed persistence, public contact visibility and private login email. Experience/security suites, lint, TypeScript and the local production build passed. No production accounts were changed.
+
+### Restore sample data impact
+
+- Impact includes sample demands alongside real activity in all totals, connection counts and average agreed fee, superseding the real-only Impact entry below.
+- English notice: “Includes real activity and sample data impact. Sample demands, artist connections and fees are included to show how the marketplace works. Sample fees are fictional.” Matching Hindi copy is included.
+- Demand connections distributes its four rows through the panel height, with larger values and thin dividers; narrow screens retain a single-column layout.
+- Validation: experience regressions, lint, TypeScript and the local production build passed. English/Hindi production HTTP checks passed against isolated sample data (44 demands, 17 connected artists). Browser layout verification could not be completed in this session.
+
 ## 2026-11-15
 
 ### Live-looking sample catalogue (supersedes earlier sample, Impact and footer entries below)

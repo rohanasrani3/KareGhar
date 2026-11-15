@@ -25,8 +25,18 @@ export default async function Page() {
           <input name="name" autoComplete="name" maxLength={120} required />
         </label>
         <label>
-          {t("Email", "ईमेल")}
+          {t("Email (private)", "ईमेल (निजी)")}
           <input type="email" name="email" autoComplete="email" maxLength={254} autoCapitalize="none" spellCheck={false} required />
+        </label>
+        <label>
+          {t("Public contact (required)", "सार्वजनिक संपर्क (अनिवार्य)")}
+          <input name="contact" minLength={1} maxLength={240} required aria-describedby="signup-contact-help" />
+          <small id="signup-contact-help">
+            {t(
+              "Enter a business email, phone number or preferred way to connect. This is visible to everyone on your public profile. Your account email stays private.",
+              "व्यावसायिक ईमेल, फ़ोन नंबर या संपर्क का पसंदीदा तरीका दें। यह आपके सार्वजनिक प्रोफ़ाइल पर सभी को दिखाई देगा। आपके खाते का ईमेल निजी रहेगा।",
+            )}
+          </small>
         </label>
         <label>
           {t(

@@ -14,7 +14,22 @@ const directory = mkdtempSync(join(tmpdir(), "kareghar-security-"));
 const previousDirectory = process.env.KAREGHAR_DATA_DIR;
 process.env.KAREGHAR_DATA_DIR = directory;
 const db = new DatabaseSync(":memory:");
+const passwordHash = await hash("original-password");
+// Provision an admin using the original schema, before profile and demand upgrades.
+db.exec(readFileSync("migrations/001_marketplace.sql", "utf8"));
+db.exec(readFileSync("migrations/003_moderation.sql", "utf8").split("-- PostgreSQL privileges")[0] + "COMMIT;");
+db.prepare("INSERT INTO accounts(id,username,email,name,role,password_hash) VALUES('admin','admin','','Administrator','customer',?)").run(passwordHash);
+db.exec("INSERT INTO admin_grants(account) VALUES('admin')");
 initializeLocalDb(db);
+initializeLocalDb(db);
+const upgradedAdmin = db.prepare("SELECT * FROM account_state WHERE id='admin'").get();
+assert.equal(upgradedAdmin.password_hash, passwordHash);
+assert.equal(upgradedAdmin.effective_role, "admin");
+assert.equal(upgradedAdmin.email, "");
+assert.equal(upgradedAdmin.contact, "");
+assert.equal(upgradedAdmin.bio, "");
+assert.equal(upgradedAdmin.deleted, 0);
+assert.equal(upgradedAdmin.suspended, 0);
 const statements = [];
 const query = async (sql, values = []) => {
   statements.push({ sql, values });
@@ -63,10 +78,8 @@ const invoke = (action, values) => {
   for (const [key, value] of Object.entries(values)) data.set(key, value instanceof File ? value : String(value));
   return action("", data);
 };
-const passwordHash = await hash("original-password");
-for (const [id, role] of [["customer", "customer"], ["artist", "artist"], ["admin", "customer"]])
+for (const [id, role] of [["customer", "customer"], ["artist", "artist"]])
   await query("INSERT INTO accounts(id,username,email,name,role,password_hash) VALUES($1,$1,$2,$1,$3,$4)", [id, id + "@example.invalid", role, passwordHash]);
-await query("INSERT INTO admin_grants(account) VALUES('admin')");
 const actAs = async (id) => {
   const [account] = await query("SELECT session_version FROM account_state WHERE id=$1", [id]);
   session = { accountId: id, revision: account.session_version };
@@ -75,6 +88,22 @@ const auth = load("src/server/auth.ts"), actions = load("src/server/actions.ts")
 const authorize = auth.authOptions.providers[0].authorize;
 let key;
 try {
+  assert.equal((await authorize({ username: "admin", password: "original-password" })).id, "admin");
+  await actAs("admin");
+  assert.equal((await auth.viewer()).role, "admin");
+  const moderationReads = load("src/server/moderation.ts");
+  assert.equal((await moderationReads.requireAdmin()).id, "admin");
+  // Historical blank email/contact must not prevent an admin saving a profile.
+  assert.equal(await invoke(actions.updateProfile, { name: "Administrator", email: "", company: "", bio: "Moderation team", contact: "", links: "" }), "saved");
+  assert.equal((await auth.viewer()).role, "admin");
+  assert.equal(await invoke(actions.deleteAccount, { current: "original-password", confirm: "DELETE" }), "denied");
+  await assert.rejects(invoke(actions.changePassword, { current: "original-password", password: "updated-admin-password" }), Redirect);
+  assert.equal(await auth.viewer(), null);
+  assert.equal(await authorize({ username: "admin", password: "original-password" }), null);
+  assert.equal((await authorize({ username: "admin", password: "updated-admin-password" })).id, "admin");
+  await actAs("admin");
+  assert.equal((await moderationReads.requireAdmin()).id, "admin");
+
   for (let i = 0; i < 12; i++) assert.equal(await authorize({ username: "customer", password: "wrong" }), null);
   assert.equal(await authorize({ username: "customer", password: "original-password" }), null);
   await query("UPDATE login_limits SET started=0");
@@ -117,6 +146,29 @@ try {
   }
 
   await query("INSERT INTO forms(id,category,name,hi) VALUES('test','painting','Test','Test')");
+  await query("UPDATE accounts SET bio='Artist biography',contact='Public studio contact' WHERE id='artist'");
+  await query("INSERT INTO demands(id,customer,artist,form,title,brief,fee,original_fee,status,output,created) VALUES('admin-privacy','customer','artist','test','Private completion','Private completion',7,10,'done',$1,1)", [key]);
+  await query("INSERT INTO proposals(id,demand,artist,message,quote,initial_quote) VALUES('private-proposal','admin-privacy','artist','Private offer',7,7)");
+  await query("INSERT INTO demand_ratings(demand,customer,artist,score,created,updated) VALUES('admin-privacy','customer','artist',5,1,1)");
+  await query("INSERT INTO messages(id,demand,sender,artist,body,created) VALUES('private-message','admin-privacy','customer','artist','Private conversation',1)");
+  await actAs("admin");
+  const market = load("src/server/market.ts"), history = load("src/server/history.ts");
+  const dashboard = await moderationReads.moderationDashboard("artist");
+  assert.equal(dashboard.person.bio, "Artist biography");
+  assert.equal(dashboard.person.contact, "Public studio contact");
+  for (const privateField of ["email", "password_hash", "revision"])
+    assert.equal(Object.hasOwn(dashboard.person, privateField), false);
+  assert.equal(await market.publicProfile("admin"), undefined);
+  assert.equal(await history.historyDetail("admin-privacy", "admin"), undefined);
+  assert.equal((await market.proposals("admin-privacy", "admin")).length, 0);
+  const [privateDemand] = await market.commissions({}, "admin-privacy", "admin");
+  assert.equal(privateDemand.fee, 10);
+  assert.equal(privateDemand.output, "");
+  assert.equal(privateDemand.rating, null);
+  const mediaRoute = load("src/app/api/media/[key]/route.ts");
+  assert.equal((await mediaRoute.GET(new Request("http://test"), { params: Promise.resolve({ key }) })).status, 404);
+  assert.equal(await invoke(actions.commissionAction, { id: "admin-privacy", action: "rate", rating: 1 }), "conflict");
+  assert.equal(await invoke(actions.commissionAction, { id: "admin-privacy", action: "visibility", public: "on" }), "conflict");
   await query("INSERT INTO demands(id,customer,artist,form,title,brief,fee,status,output_type,created) VALUES('format','customer','artist','test','Image','Image',10,'progress','audio',1)");
   await actAs("artist");
   assert.equal(await invoke(actions.commissionAction, { id: "format", action: "submit", file: new File([bytes], "wrong.png") }), "file");
@@ -162,7 +214,6 @@ try {
 
   await query("UPDATE accounts SET deleted=1 WHERE id='customer'");
   await actAs("admin");
-  const moderationReads = load("src/server/moderation.ts");
   assert.equal((await moderationReads.moderationAccounts()).find((account) => account.id === "customer").deleted, 1);
   assert.equal((await moderationReads.moderationDashboard("customer")).person.deleted, 1);
   assert.equal(await invoke(moderation.moderateAccount, { target: "customer", version: 1, action: "restore", reason: "Should not restore deleted account", confirm: "on" }), "conflict");
@@ -171,7 +222,7 @@ try {
   await media.removeMedia(key);
   await media.removeMedia(key);
   assert.equal((await media.mediaResponse(key)).status, 404);
-  console.log("PASS: persistent login/current-password budgets, invalid hashes, session invalidation, safe external URLs, upload signatures/format, private media keys and byte ranges, missing files, moderation/selection account lock ordering, suspended-participant guards, active-work deletion and deleted-account moderation.");
+  console.log("PASS: legacy admin migration/login/profile/password compatibility and privacy boundaries, persistent login/current-password budgets, invalid hashes, session invalidation, safe external URLs, upload signatures/format, private media keys and byte ranges, missing files, moderation/selection account lock ordering, suspended-participant guards, active-work deletion and deleted-account moderation.");
 } finally {
   if (key) await media.removeMedia(key);
   db.close();

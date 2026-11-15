@@ -25,9 +25,9 @@ Use Node.js 24. Run `npm ci` then `npm run dev`. Open http://localhost:3000. Loc
 3. Build with `npm run build` and serve with `npm start` on a Node host such as Render. Set the host runtime to Node 24. For an explicitly local production-build smoke test, use KAREGHAR_LOCAL=1, a local NEXTAUTH_URL and a temporary NEXTAUTH_SECRET.
 4. Set KAREGHAR_SEED_SAMPLES=1 only if sample records should be inserted into a connected database. Accounts created by signup are always real, single-role accounts.
 
-Sample data (src/server/samples.ts) has nine invented customers, one invented artist for each of the 17 seed art forms, portfolio work and 44 demands across Finding, In progress and Done, with 1–4 customer ratings per artist. Portfolio media are real Wikimedia Commons photos (public/photos) and recordings (public/audio), credited in each caption and on /credits. Sample records cannot sign in or receive proposals. They count toward rankings and ratings with a visible Sample tag, and are excluded from Impact. Seeding records a version in schema_migrations and is skipped once applied; bump SEED_VERSION in samples.ts when you change sample data. Rankings count only demands with an artist’s finished submission, not ordinary portfolio uploads.
+Sample data (src/server/samples.ts) has nine invented customers, one invented artist for each of the 17 seed art forms, portfolio work and 44 demands across Finding, In progress and Done, with 1–4 customer ratings per artist. Portfolio media are real Wikimedia Commons photos (public/photos) and recordings (public/audio), credited in each caption and on /credits. Sample records cannot sign in or receive proposals. They count toward rankings, ratings and Impact with a visible Sample tag; the Impact page explains that sample fees are fictional. Seeding records a version in schema_migrations and is skipped once applied; bump SEED_VERSION in samples.ts when you change sample data. Rankings count only demands with an artist’s finished submission, not ordinary portfolio uploads.
 
-Local SQLite applies migrations automatically. Set KAREGHAR_DATA_DIR to a separate directory (for example `.kareghar/qa-experience`) for isolated local tests; the default is `.kareghar`. Work in progress and private conversations are available through Work history rather than public discovery. Login email stays private; the optional public contact field is explicitly opt-in.
+Local SQLite applies migrations automatically. Set KAREGHAR_DATA_DIR to a separate directory (for example `.kareghar/qa-experience`) for isolated local tests; the default is `.kareghar`. Work in progress and private conversations are available through Work history rather than public discovery. New customer and artist signups require public contact (1–240 characters after trimming), with a notice that it is visible on their public profile. Login email stays private. Existing accounts are not backfilled; profile contact editing remains available.
 
 Run `npm run test:experience` for the isolated workflow regression checks and `npm run test:security` for persistent attempt limits, session invalidation, upload signatures/formats, private media access, byte ranges and deleted-account moderation. See [experience validation](docs/EXPERIENCE-QA.md) for the browser scenarios and deployment limitations.
 
@@ -53,7 +53,7 @@ The full header logo is `public/kareghar-logo.png`. The tab uses a transparent h
 
 The shared footer uses the approved folk-art marketplace paragraph and explains the Sample tag. Attribution appears in a separate **Credits** line at its bottom, linking to `/credits` for photographers, sources and licences. Homepage photographs and craft tiles have no overlaid credits. Exact English process/footer copy is recorded in [CHANGELOG.md](CHANGELOG.md).
 
-Impact reports agreed demand value, selected demands, unique selected artists, posting customers and average agreed fee. It counts real activity only (samples are excluded), removes completion totals/rates and does not claim verified payments or earnings.
+Impact reports agreed demand value, selected demands, unique selected artists, posting customers and average agreed fee. It includes real activity and sample data impact, explicitly explains that sample fees are fictional, removes completion totals/rates and does not claim verified payments or earnings.
 
 ## Project documentation
 
@@ -71,4 +71,17 @@ The changes recorded here are local. Before a hosted release, apply any outstand
 
 Run npm run admin:create -- Admin from the project directory to create a fresh administrator. The command generates a password and prints it once to your terminal. An optional email is the second argument. The database permits one account with a blank email. Public signup cannot grant admin access. Set DATABASE_URL when targeting the hosted database and apply migration 003 first. Local setup applies the migration automatically.
 
+For Vercel, admin access lives in the PostgreSQL `accounts` and `admin_grants` tables, not in the deployment files. If the deployed app uses the same database where the admin was provisioned, sign in with the existing credentials; no account migration is needed. A local SQLite admin does not transfer when source is deployed. To provision a fresh admin in the production database, apply migrations 001–008 first, then run these commands from `firstship` in PowerShell with Node 24 and dependencies installed:
+
+```powershell
+npx vercel link
+$env:NODE_ENV = "production"
+$env:KAREGHAR_LOCAL = "0"
+npx vercel env run -e production -- node scripts/create-admin.mjs Admin admin@example.com
+```
+
+Link to the existing Vercel project and ensure its Production environment has the correct `DATABASE_URL`. `vercel env run` supplies that environment directly to the command ([Vercel CLI documentation](https://vercel.com/docs/cli/env#running-commands-with-environment-variables)). Production mode with local fallback disabled prevents accidentally provisioning SQLite if the connection variable is missing. Run provisioning once from your terminal, not in Vercel's build command. Save the generated password and use it at the deployed site's `/login`; the username is case-sensitive. This creates a fresh account with a new password, rather than copying the local account or promoting an existing signup. If the username/email already exists, the transaction fails without granting privileges; use a fresh username/email. A database-only admin creation does not require redeploying the site.
+
 Sign in at /login and open Moderation. The account page shows current commissions before suspension. Both suspension and restoration require a reason and confirmation. Admins cannot access another user's private proposals, email or unpublished media.
+
+Existing admin accounts remain compatible after applying outstanding migrations through 008: account IDs, usernames, password hashes and admin grants are preserved. Historical blank admin email/contact can remain blank when editing the profile; the public signup contact requirement does not backfill them. Moderation account details now include the member's public bio and contact with English/Hindi labels. Private login email, selected quotations, messages, ratings and media retain their existing access rules.

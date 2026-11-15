@@ -28,6 +28,10 @@ try {
       INSERT INTO commissions(id,customer,artist,form,title,brief,fee,status,output,created)
        VALUES('legacy-demand','legacy-customer','legacy-artist','legacy-form','Legacy work','Preserve history',789,'progress','legacy.png',123);
       INSERT INTO proposals(id,commission,artist,message) VALUES('legacy-proposal','legacy-demand','legacy-artist','Private legacy proposal');`);
+    if (name.startsWith("003_")) await db.exec(`
+      INSERT INTO accounts(id,username,email,name,role,password_hash)
+       VALUES('legacy-admin','legacy_admin','','Legacy administrator','customer','preserved-admin-hash');
+      INSERT INTO admin_grants(account) VALUES('legacy-admin');`);
     if (name.startsWith("004_")) await db.exec(`
       INSERT INTO commission_events(id,commission,actor,artist,kind,created,quote,output)
        VALUES('legacy-event','legacy-demand','legacy-artist','legacy-artist','submitted',123,789,'legacy.png');
@@ -38,6 +42,14 @@ try {
   }
 
   const [legacy] = await q("SELECT * FROM demands WHERE id='legacy-demand'");
+  const [legacyAdmin] = await q("SELECT * FROM account_state WHERE id='legacy-admin'");
+  assert.equal(legacyAdmin.effective_role, "admin");
+  assert.equal(legacyAdmin.password_hash, "preserved-admin-hash");
+  assert.equal(legacyAdmin.email, "");
+  assert.equal(legacyAdmin.bio, "");
+  assert.equal(legacyAdmin.contact, "");
+  assert.equal(legacyAdmin.deleted, 0);
+  assert.equal(legacyAdmin.suspended, 0);
   assert.equal(legacy.status, "done");
   assert.equal(legacy.original_fee, 789);
   assert.equal(legacy.output, "legacy.png");
@@ -175,12 +187,17 @@ try {
   assert.equal(await invoke(actions.deleteWork, { id: work.id }), "saved");
   const impact = renderToStaticMarkup(await load("src/app/impact/page.tsx").default());
   assert(impact.includes("Agreed demand value"));
-  await q("INSERT INTO accounts(id,username,email,name,role,password_hash) VALUES('audit-admin','audit_admin','audit-admin@example.invalid','Audit administrator','customer','')");
-  await q("INSERT INTO admin_grants(account) VALUES('audit-admin')");
-  session = "audit-admin";
+  session = "legacy-admin";
   const moderation = load("src/server/moderation.ts");
-  await moderation.moderationAccounts(); await moderation.moderationHistory(); await moderation.moderationDashboard("legacy-artist");
-  console.log("PASS: PostgreSQL migrations 001–008, preserved records/FKs, renamed constraints/indexes, RLS/grants, sample idempotency, public/private projections and full demand workflow.");
+  assert.equal((await moderation.requireAdmin()).id, "legacy-admin");
+  assert.equal(await invoke(actions.updateProfile, { name: "Legacy administrator", email: "", company: "", bio: "Moderation team", contact: "", links: "" }), "saved");
+  await moderation.moderationAccounts(); await moderation.moderationHistory();
+  const dashboard = await moderation.moderationDashboard("legacy-artist");
+  assert.equal(dashboard.person.bio, "Audited profile");
+  assert.equal(dashboard.person.contact, "Public contact");
+  assert.equal(Object.hasOwn(dashboard.person, "email"), false);
+  assert.equal((await q("SELECT password_hash FROM accounts WHERE id='legacy-admin'"))[0].password_hash, "preserved-admin-hash");
+  console.log("PASS: PostgreSQL migrations 001–008, legacy admin grant/credentials/profile compatibility, preserved records/FKs, renamed constraints/indexes, RLS/grants, sample idempotency, public/private projections and full demand workflow.");
 } finally {
   await db.close();
 }

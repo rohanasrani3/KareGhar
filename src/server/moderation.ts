@@ -46,12 +46,14 @@ export async function moderationDashboard(id: string) {
     role: string;
     company: string;
     links: string;
+    bio: string;
+    contact: string;
     suspended: number;
     sample: number;
     deleted: number;
     session_version: number;
   }>(
-    "SELECT name,username,effective_role AS role,company,links,suspended,sample,deleted,session_version FROM account_state WHERE id=$1",
+    "SELECT name,username,effective_role AS role,company,links,bio,contact,suspended,sample,deleted,session_version FROM account_state WHERE id=$1",
     [id],
   );
   if (!person) notFound();
