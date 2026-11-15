@@ -4,6 +4,11 @@ This records the final approved behavior and wording. Product rules live in [AGE
 
 ## 2026-11-16
 
+### Capitalize navigation labels
+
+- English navbar labels are Find Artists, Find Demand and Our Impact. Find Demand retains All statuses as its default.
+- Clarified that migration 009 preserves the posted-demand total. No further PostgreSQL change is required for this copy update.
+
 ### Documentation and release handoff
 
 - Replaced the technical README with concise artist/customer journeys, proposal rules and Work history guidance; contributor, setup and deployment instructions live in AGENTS.md. Clarified that open demands remain In progress even after proposals arrive, until one is accepted.
