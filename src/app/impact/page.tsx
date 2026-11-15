@@ -86,7 +86,7 @@ export default async function Page() {
           <dl>
             {[
               [t("Demands posted", "पोस्ट की गई माँगें"), s.posted],
-              [t("Finding an artist", "कलाकार की तलाश"), s.finding],
+              [t("In progress", "प्रस्ताव प्रक्रिया में"), s.finding],
               [t("Artist selected", "कलाकार चुना गया"), s.selected],
               [
                 t(

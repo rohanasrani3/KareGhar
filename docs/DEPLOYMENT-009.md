@@ -30,6 +30,6 @@ Startup automatically applies migration 009 to SQLite. Restart an already runnin
 
    `legacy_progress_rows` must be **0**. In Work history, verify that an accepted proposal shows Completed, its selected artist can submit a file, and rating becomes available only after submission.
 
-The Demand board defaults to All statuses and includes accepted demands even before upload. Migration 009 preserves the total number of demands, so an Impact total of 17 stays 17; it changes statuses, not catalogue membership. Its count can still differ from Impact when search filters, paused accounts or the signed-in user's own listings are excluded.
+The Demand board defaults to In progress; selecting All statuses includes accepted demands even before upload. Migration 009 preserves the total number of demands, so an Impact total of 17 stays 17; it changes statuses, not catalogue membership. Its count can still differ from Impact when search filters, paused accounts or the signed-in user's own listings are excluded.
 
 No database reset or full sample reseed is needed. Leave `KAREGHAR_SEED_SAMPLES` unset or set to `0` if you want to preserve the hosted sample catalogue exactly; enabling a full seed on an incomplete catalogue may add missing fixtures. This workflow update retains the existing catalogue seed version. The separate [sample-contact repair](../scripts/backfill-sample-contacts.sql) remains available for blank fictional contacts.

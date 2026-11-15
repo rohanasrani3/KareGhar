@@ -12,7 +12,7 @@ import { OUTPUT_LABELS, deadlineDate, mediaUrl, rupees } from "@/lib/commission-
 import "@/components/commissions.css";
 import type { Metadata } from "next";
 
-// No viewer ID: only publicly visible demands (never in-progress or paused ones) are read.
+// No viewer ID: read only public, unpaused demands in either supported status.
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const [c] = await commissions({}, id);

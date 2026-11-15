@@ -32,7 +32,6 @@ export default async function Page({
           </Link>
         )}
       </div>
-      <p className="field-help">{t("In progress means a proposal has not been accepted yet. Completed means the customer has accepted an artist; finished work can be uploaded afterward.", "प्रस्ताव प्रक्रिया में का अर्थ है कि अभी कोई प्रस्ताव स्वीकार नहीं हुआ है। पूर्ण का अर्थ है कि ग्राहक ने कलाकार चुन लिया है; तैयार कार्य बाद में अपलोड किया जा सकता है।")}</p>
       <Filters all={all} params={selectedParams} status />
       <div className="results-bar"><p>{items.length} {t("demands", "माँग")}</p>{user && <Link href="/profile/history">{t("Work history", "कार्य इतिहास")}</Link>}</div>
       <div className="directory-grid">
@@ -76,7 +75,7 @@ export default async function Page({
         })}
       </div>
       {!items.length && (
-        <div className="empty-state"><h2>{t("A fresh start for your search.", "अपनी खोज को नई शुरुआत दें।")}</h2><p>{t("No demands match these filters. Try another category or view all open demands.", "इन फ़िल्टर से कोई माँग नहीं मिली। दूसरी श्रेणी चुनें या सभी खुली माँगें देखें।")}</p><Link className="pill" href="/commissions">{t("Clear filters", "फ़िल्टर हटाएँ")}</Link></div>
+        <div className="empty-state"><h2>{t("A fresh start for your search.", "अपनी खोज को नई शुरुआत दें।")}</h2><p>{t("No demands match these filters. Try another category or view all demands.", "इन फ़िल्टर से कोई माँग नहीं मिली। दूसरी श्रेणी चुनें या सभी माँगें देखें।")}</p><Link className="pill" href="/commissions">{t("Clear filters", "फ़िल्टर हटाएँ")}</Link></div>
       )}
     </>
   );

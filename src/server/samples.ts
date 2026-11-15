@@ -164,7 +164,7 @@ export const SAMPLE_COMMISSIONS: SampleDemand[] = [
   { id: "demo-gond-menu", customer: "demo-cafe", form: "gond", title: "Gond illustrations for our new menu", brief: "Six small Gond-style illustrations of tea, snacks and birds for a printed menu card.", fee: 9000, status: "done", submitted: false, artist: "demo-gond" },
   { id: "demo-chikan-kurtas", customer: "demo-hotel", form: "chikankari", title: "Chikankari detailing on staff kurtas", brief: "Hand chikankari yokes on 12 white cotton kurtas for front-desk staff. Simple floral pattern.", fee: 16000, status: "done", submitted: false, artist: "demo-chikankari" },
   { id: "demo-kathak-launch", customer: "demo-events", form: "kathak", title: "Kathak performance at a product launch", brief: "A 10-minute Kathak piece with live tabla to open a jewellery brand launch.", fee: 15000, status: "done", submitted: false, artist: "demo-kathak" },
-  // Finding an artist
+  // In progress
   { id: "demo-print", customer: "demo-customer", form: "block-print", title: "Hand-printed table runners", brief: "Design six cotton runners with Bagru floral motifs for our café.", fee: 4500, status: "finding" },
   { id: "demo-madhubani-lobby", customer: "demo-hotel", form: "madhubani", title: "Madhubani panels for the hotel lobby", brief: "Three 3 × 4 ft Madhubani panels showing local festivals for the lobby wall. Bright natural colours.", fee: 25000, status: "finding" },
   { id: "demo-lavani-sangeet", customer: "demo-events", form: "lavani", title: "Lavani performance for a sangeet night", brief: "A group Lavani performance of about 15 minutes for a wedding sangeet in Pune, with dholki.", fee: 18000, status: "finding" },

@@ -26,7 +26,7 @@ export default async function Page() {
             </p>
             <p>
               {a.deleted ? t("Deleted", "हटाया गया") : a.suspended ? t("Suspended", "निलंबित") : t("Active", "सक्रिय")}{" "}
-              , {t("Open demands", "खुली माँगें")} {a.active}
+              , {t("In progress demands", "प्रस्ताव प्रक्रिया में माँगें")} {a.active}
             </p>
           </article>
         ))}

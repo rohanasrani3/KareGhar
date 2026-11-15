@@ -38,8 +38,8 @@ export async function Filters({
       {status && (
         <label>
           {t("Status", "स्थिति")}
-          <select key={params.status ?? ""} name="status" defaultValue={params.status ?? ""}>
-            <option value="">{t("All statuses", "सभी स्थितियाँ")}</option>
+          <select key={params.status ?? ""} name="status" defaultValue={params.status || "all"}>
+            <option value="all">{t("All statuses", "सभी स्थितियाँ")}</option>
             {["finding", "done"].map((s) => (
               <option key={s} value={s}>
                 {stateName(s, lang === "hi")}

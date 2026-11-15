@@ -92,10 +92,11 @@ function load(file) {
 const actions = load("src/server/actions.ts"), market = load("src/server/market.ts"), history = load("src/server/history.ts"), messaging = load("src/server/history-actions.ts"), media = load("src/app/api/media/[key]/route.ts");
 const { ART_FORMS } = load("src/contract/artForms.ts"), { seedSamples } = load("src/server/samples.ts");
 const { directoryFilters } = load("src/lib/directory-filters.ts");
-assert.equal(directoryFilters(ART_FORMS, {}).status, "");
+assert.equal(directoryFilters(ART_FORMS, {}).status, "finding");
 assert.equal(directoryFilters(ART_FORMS, { status: "finding" }).status, "finding");
 assert.equal(directoryFilters(ART_FORMS, { status: "done" }).status, "done");
-assert.equal(directoryFilters(ART_FORMS, { status: "progress" }).status, "");
+assert.equal(directoryFilters(ART_FORMS, { status: "all" }).status, "");
+assert.equal(directoryFilters(ART_FORMS, { status: "progress" }).status, "finding");
 const renderHistoryDetail = async (id) => renderToStaticMarkup(await load("src/app/profile/history/[id]/page.tsx").default({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) }));
 const impactMetrics = async () => {
   const html = renderToStaticMarkup(await load("src/app/impact/page.tsx").default());
@@ -110,7 +111,7 @@ const impactMetrics = async () => {
   return {
     selected: metric("Demands with an artist selected"), fees: metric("Agreed demand value"),
     artists: metric("Artists connected"), customers: metric("Customers posting demands"),
-    posted: metric("Demands posted"), finding: metric("Finding an artist"), average: metric("Average agreed fee"),
+    posted: metric("Demands posted"), finding: metric("In progress"), average: metric("Average agreed fee"),
   };
 };
 const impact = async () => {

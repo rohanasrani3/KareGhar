@@ -15,7 +15,7 @@ export async function SiteFooter() {
       </p>
       <nav aria-label={t("Footer navigation", "फ़ुटर नेविगेशन")}>
         <Link href="/">{t("Home", "मुख्य पृष्ठ")}</Link>
-        <Link href="/talent">{t("Find artists", "कलाकार खोजें")}</Link>
+        <Link href="/talent">{t("Find Artists", "कलाकार खोजें")}</Link>
         <Link href="/commissions">{t("Demand board", "माँग बोर्ड")}</Link>
         <Link href="/impact">{t("Impact", "प्रभाव")}</Link>
       </nav>

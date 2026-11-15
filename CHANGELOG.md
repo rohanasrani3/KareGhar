@@ -4,9 +4,15 @@ This records the final approved behavior and wording. Product rules live in [AGE
 
 ## 2026-11-16
 
+### Align workflow wording across the site
+
+- README journeys explicitly follow In progress → Completed on proposal acceptance → finished-work upload, and describe the In progress default with an explicit All statuses option.
+- Removed the lifecycle explanation from the Demand board in both languages. Aligned pending-selection labels in Impact/moderation, all-status discovery links, finished-work galleries, footer capitalization and account-deletion guidance.
+- Corrected README upload guidance to the existing 4 MiB browser limit. No status logic, database schema or discovery defaults changed.
+
 ### Capitalize navigation labels
 
-- English navbar labels are Find Artists, Find Demand and Our Impact. Find Demand retains All statuses as its default.
+- English navbar labels are Find Artists, Find Demand and Our Impact. Find Demand defaults to In progress, with an explicit All statuses option.
 - Clarified that migration 009 preserves the posted-demand total. No further PostgreSQL change is required for this copy update.
 
 ### Documentation and release handoff
@@ -18,7 +24,7 @@ This records the final approved behavior and wording. Product rules live in [AGE
 ### Complete demands on proposal acceptance
 
 - Accepting a proposal immediately sets the demand to Completed. In progress now describes the pre-selection proposal stage (`finding`). The selected artist can submit finished work afterward; ratings and submission-based rankings still require that file.
-- Accepted demands stay on the public board, which defaults to All statuses. Work history defaults to All activity. Submission markers use the actual output rather than completion status, and acceptance copy explains later upload in English/Hindi.
+- Accepted demands stay on the public board and are available through the All statuses option. Work history defaults to All activity. Submission markers use the actual output rather than completion status, and acceptance copy explains later upload in English/Hindi.
 - Customer cancellation remains available before upload. Account deletion remains blocked while a selected demand has no submission. Quotations, conversations and unpublished output remain private; reference images follow the now-public demand.
 - Added repeatable migration 009 for legacy `progress` records without fabricating uploads or dates. Local SQLite applies it at startup. The existing local database was backed up and upgraded: 45 demands preserved, four legacy states converted, all other demand fields unchanged. PostgreSQL rollout is documented in [docs/DEPLOYMENT-009.md](docs/DEPLOYMENT-009.md); production has not been changed.
 - Sample catalogue membership and its seed version stay unchanged; migration 009 upgrades existing selected samples, and new seeds create them as Completed without inventing submissions.
