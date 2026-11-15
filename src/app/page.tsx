@@ -55,7 +55,7 @@ export default async function Home() {
             <Link className="button" href="/talent">
               {t("Find an artist", "कलाकार खोजें")}
             </Link>
-            <Link className="text-action" href="/commissions">
+            <Link className="text-action" href="/demands">
               {t("Browse demands", "माँग देखें")}
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default async function Home() {
       <section className="home-cta" aria-labelledby="cta-h">
         <div>
           <h2 id="cta-h">{t("Find a demand that speaks to your craft.", "अपनी कला के लिए सही माँग खोजें।")}</h2>
-          <Link className="button" href="/commissions">{t("Browse demands", "माँगें देखें")}</Link>
+          <Link className="button" href="/demands">{t("Browse demands", "माँगें देखें")}</Link>
         </div>
       </section>
     </>

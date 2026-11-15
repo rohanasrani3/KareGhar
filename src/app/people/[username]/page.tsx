@@ -29,7 +29,7 @@ export default async function Page({ params }: { params: Promise<{ username: str
   if (!p) notFound();
   const [items, finished, all, rating] = await Promise.all([p.role === "artist" ? works(p.id) : Promise.resolve([]), p.role === "artist" ? publishedWorks(p.id) : Promise.resolve([]), forms(), artistRating(p.id)]);
   return <section className="public-profile">
-    <Link className="back-link" href={p.role === "artist" ? "/talent" : "/commissions"}>{p.role === "artist" ? t("All artists", "सभी कलाकार") : t("Explore demands", "माँग देखें")}</Link>
+    <Link className="back-link" href={p.role === "artist" ? "/talent" : "/demands"}>{p.role === "artist" ? t("All artists", "सभी कलाकार") : t("Explore demands", "माँग देखें")}</Link>
     <header className="public-profile-heading"><div className="profile-intro">
       {p.photo ? <Image width={112} height={112} unoptimized className="profile-avatar" alt="" src={"/api/media/" + p.photo} /> : <span className="profile-avatar-placeholder" aria-hidden="true">{p.name.slice(0, 1).toUpperCase()}</span>}
       <div><p className="meta">{p.role === "artist" ? t("Artist", "कलाकार") : t("Customer", "ग्राहक")} {Boolean(p.sample) && <Sample />}</p><h1>{p.name}</h1>{p.role === "artist" && <Rating score={rating.rating_average} count={rating.rating_count} hi={lang === "hi"} />}{p.company && <p>{p.company}</p>}<SocialLinks links={parseProfileLinks(p.links)} /></div>

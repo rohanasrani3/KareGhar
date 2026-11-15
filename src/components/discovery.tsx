@@ -27,7 +27,7 @@ export async function Filters({
 }) {
   const { lang, t } = await language();
   return (
-    <form className="filters" action={href ?? (status ? "/commissions" : "/talent")}>
+    <form className="filters" action={href ?? (status ? "/demands" : "/talent")}>
       <FilterFields
         key={`${params.category ?? ""}:${params.form ?? ""}`}
         all={all}
@@ -50,7 +50,7 @@ export async function Filters({
       )}
       <div className="filter-actions">
         <button className="button">{t("Apply filters", "फ़िल्टर लगाएँ")}</button>
-        {(params.category || params.form || (status && params.status)) && <Link className="clear-filters" href={href ?? (status ? "/commissions" : "/talent")}>{t("Clear filters", "फ़िल्टर हटाएँ")} <span aria-hidden="true">×</span></Link>}
+        {(params.category || params.form || (status && params.status)) && <Link className="clear-filters" href={href ?? (status ? "/demands" : "/talent")}>{t("Clear filters", "फ़िल्टर हटाएँ")} <span aria-hidden="true">×</span></Link>}
       </div>
     </form>
   );

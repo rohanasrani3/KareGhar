@@ -84,7 +84,7 @@ The workflow has three steps: demand posted, artist selected, finished work subm
 
 ### Customer ratings and naming
 
-The interface calls customer requests **demands**, artist responses **proposals**, the discovery page **Demand board** (with **Find Demand** in the main navigation), and the private workspace **Work history**. Existing `/commissions` URLs, Server Action names and TypeScript identifiers stay compatible. Physical SQL storage follows demand terminology after migration 008.
+The interface calls customer requests **demands**, artist responses **proposals**, the discovery page **Demand board** (with **Find Demand** in the main navigation), and the private workspace **Work history**. Demand pages use `/demands`, while API routes, Server Action names and TypeScript identifiers retain their existing compatibility names. Physical SQL storage follows demand terminology after migration 008.
 
 Work history offers **Rate artist** only after the artist submits the finished work. Selecting a proposal alone does not enable rating. `Commission.rating` is an integer or `null`. The score is readable only by the customer/assigned artist or when the finished output is publicly shared; hiding the output hides its individual score. `publishedWorks` includes the visible rating next to each finished piece. Unrated work is labelled explicitly, never treated as zero stars.
 

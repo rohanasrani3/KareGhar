@@ -31,7 +31,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const form = all.find((f) => f.id === c.form);
   const formLabel = form?.[lang === "hi" ? "hi" : "name"] ?? c.form;
   return <div className="commission-workspace public-commission">
-    <Link className="back-link" href="/commissions">{t("All demands", "सभी माँगें")}</Link>
+    <Link className="back-link" href="/demands">{t("All demands", "सभी माँगें")}</Link>
     <header className="workspace-heading">
       <div className="commission-meta"><span className={"work-state state-" + c.status}>{stateName(c.status, lang === "hi")}</span><span>{formLabel}</span>{Boolean(c.sample) && <Sample />}</div>
       <h1>{c.title}</h1>

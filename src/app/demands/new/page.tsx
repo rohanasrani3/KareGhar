@@ -11,9 +11,9 @@ import "@/components/commissions.css";
 export default async function Page() {
   const [user, all, { lang, t }] = await Promise.all([viewer(), forms(), language()]);
   if (!user) redirect("/login");
-  if (user.role !== "customer") redirect("/commissions");
+  if (user.role !== "customer") redirect("/demands");
   return <div className="commission-workspace">
-    <Link className="back-link" href="/commissions">{t("All demands", "सभी माँगें")}</Link>
+    <Link className="back-link" href="/demands">{t("All demands", "सभी माँगें")}</Link>
     <header className="workspace-heading"><p className="meta">{t("A clear demand brings your idea to life", "अच्छे काम की शुरुआत स्पष्ट विवरण से होती है")}</p><h1>{t("What would you like made?", "आप क्या बनवाना चाहते हैं?")}</h1><p>{t("Give an artist the details they need to bring your idea to life.", "अपनी कल्पना को साकार करने के लिए कलाकार को ज़रूरी जानकारी दें।")}</p></header>
     <div className="commission-layout">
       <section className="workspace-panel">
@@ -21,7 +21,7 @@ export default async function Page() {
           <label>{t("Demand title", "माँग का शीर्षक")}<input name="title" maxLength={120} required placeholder={t("A Warli mural for our café", "हमारे कैफ़े के लिए वारली चित्र")} /></label>
           <CommissionFormFields all={all} lang={lang} />
         </ActionForm>
-        <Link className="quiet-link" href="/commissions">{t("Cancel and return", "रद्द करके वापस जाएँ")}</Link>
+        <Link className="quiet-link" href="/demands">{t("Cancel and return", "रद्द करके वापस जाएँ")}</Link>
       </section>
       <aside className="commission-aside"><p className="meta">{t("What happens next", "इसके बाद क्या होगा")}</p><ol className="brief-guide">
         <li><strong>{t("Meet interested artists", "इच्छुक कलाकारों से मिलें")}</strong><p>{t("Receive private proposals at your budget or with a custom quotation.", "अपने बजट पर या कलाकार के सुझाए मूल्य पर निजी प्रस्ताव पाएँ।")}</p></li>
