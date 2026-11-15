@@ -169,10 +169,10 @@ try {
   assert.equal((await mediaRoute.GET(new Request("http://test"), { params: Promise.resolve({ key }) })).status, 404);
   assert.equal(await invoke(actions.commissionAction, { id: "admin-privacy", action: "rate", rating: 1 }), "conflict");
   assert.equal(await invoke(actions.commissionAction, { id: "admin-privacy", action: "visibility", public: "on" }), "conflict");
-  await query("INSERT INTO demands(id,customer,artist,form,title,brief,fee,status,output_type,created) VALUES('format','customer','artist','test','Image','Image',10,'progress','audio',1)");
+  await query("INSERT INTO demands(id,customer,artist,form,title,brief,fee,status,output_type,created) VALUES('format','customer','artist','test','Image','Image',10,'done','audio',1)");
   await actAs("artist");
   assert.equal(await invoke(actions.commissionAction, { id: "format", action: "submit", file: new File([bytes], "wrong.png") }), "file");
-  assert.equal((await query("SELECT status FROM demands WHERE id='format'"))[0].status, "progress");
+  assert.equal((await query("SELECT status FROM demands WHERE id='format'"))[0].status, "done");
 
   const schemas = load("src/contract/schemas.ts");
   for (const url of ["javascript:alert(1)", "data:text/html,hello", "https://name:secret@example.com/work", "not a URL"])

@@ -4,6 +4,29 @@ This records the final approved behavior and wording. Product rules live in [AGE
 
 ## 2026-11-16
 
+### Documentation and release handoff
+
+- Replaced the technical README with concise artist/customer journeys, proposal rules and Work history guidance; contributor, setup and deployment instructions live in AGENTS.md. Clarified that open demands remain In progress even after proposals arrive, until one is accepted.
+- Updated current contracts and rollout instructions through migration 009, distinguished historical browser checks from current behavior, and explained that connected hosting may deploy on push while PostgreSQL migrations remain manual.
+- Corrected the bilingual Sample tooltip to match sample inclusion in Impact.
+
+### Complete demands on proposal acceptance
+
+- Accepting a proposal immediately sets the demand to Completed. In progress now describes the pre-selection proposal stage (`finding`). The selected artist can submit finished work afterward; ratings and submission-based rankings still require that file.
+- Accepted demands stay on the public board, which defaults to All statuses. Work history defaults to All activity. Submission markers use the actual output rather than completion status, and acceptance copy explains later upload in English/Hindi.
+- Customer cancellation remains available before upload. Account deletion remains blocked while a selected demand has no submission. Quotations, conversations and unpublished output remain private; reference images follow the now-public demand.
+- Added repeatable migration 009 for legacy `progress` records without fabricating uploads or dates. Local SQLite applies it at startup. The existing local database was backed up and upgraded: 45 demands preserved, four legacy states converted, all other demand fields unchanged. PostgreSQL rollout is documented in [docs/DEPLOYMENT-009.md](docs/DEPLOYMENT-009.md); production has not been changed.
+- Sample catalogue membership and its seed version stay unchanged; migration 009 upgrades existing selected samples, and new seeds create them as Completed without inventing submissions.
+- Validation passed: experience/security suites, PostgreSQL migrations 001–009 and workflow rehearsal, server-rendered history assertions, lint, and the isolated local production build including TypeScript checks.
+
+### Preserve and backfill fictional sample contacts
+
+- Added a repeatable contact-only SQL repair for blank, non-deleted sample profiles, excluding admin grants. Fictional `username@example.invalid` contacts do not expose login email or change real accounts, existing contacts or demand records.
+- Sample seeding preserves existing contacts and has a separate contact-upgrade marker, so an already recorded catalogue can receive the patch without inserting more demands.
+- Documented why Impact and public discovery counts differ, along with read-only diagnostic SQL. No demand visibility or metric rules changed.
+- Production public reads showed 17 Impact demands and 13 anonymous listings (6 open, 7 completed), plus missing contacts on two sample and two regular artists. No hosted database writes were performed.
+- Validation passed: experience regressions, in-memory PostgreSQL rehearsal, lint and isolated local production build. Both database suites exercise repeated SQL repair, a previously seeded catalogue receiving the contact upgrade, and preservation of existing contacts, private emails, real/admin/deleted accounts and demand records.
+
 ### Admin compatibility with current accounts and demands
 
 - Moderation account details now show public bio/contact with English/Hindi labels and a missing-contact fallback. Private login email and credentials remain excluded.
@@ -135,4 +158,4 @@ Implementation: `src/components/portfolio-manager.tsx` and `src/components/profi
 - The favicon follow-up passed lint and build. An isolated production preview returned HTTP 200 with the correct content types and exact files for both icon URLs. Rendered page metadata included both links, and all six ICO frames decoded at the expected sizes with alpha transparency. This verifies serving and metadata, not a refresh of a specific Chrome tab's cache.
 - A dependency reinstall encountered a Windows lock on loaded native modules; `npm install` restored dependencies. Production builds required permission to write generated route files outside the filesystem sandbox.
 
-See [README.md](README.md) for setup and deployment, and [docs/EXPERIENCE-QA.md](docs/EXPERIENCE-QA.md) for the detailed validation record.
+See [AGENTS.md](AGENTS.md) for setup and deployment, and [docs/EXPERIENCE-QA.md](docs/EXPERIENCE-QA.md) for the detailed validation record.

@@ -4,6 +4,10 @@ Validated locally on 15 November 2026 with Node 24. The initial walkthrough used
 
 ## Automated checks
 
+Completion-on-acceptance checks added on 16 November 2026 passed in the SQLite experience/security suites and the in-memory PostgreSQL rehearsal through migration 009. They cover immediate Done status with blank output/date, later assigned-artist upload, pre-upload rating/sharing denial, public budget projection, private output, cancellation, deletion guards and migration repeatability. Server-rendered Work history verifies Completed plus the upload form, an unreached submission step before upload, All activity as the default, and rating availability only after upload. Lint and the isolated local production build (including TypeScript) passed using `.kareghar/qa-selection-completion`. The real local SQLite database was backed up under `.kareghar/backups/before-selection-completion-1794764232434.db` and migrated: all 45 demands retained, four `progress` states converted, every other demand field compared unchanged with the backup. No production database writes or new browser walkthrough were performed.
+
+Sample-contact maintenance checks added on 16 November 2026 passed in `npm run test:experience` and `node scripts/test-migrations.mjs`. Both run the shipped repair SQL twice and exercise the contact patch with the catalogue already marked seeded, checking that supplied contacts, private emails, real/admin/deleted accounts and demand records remain unchanged. Freshly seeded sample profiles have nonempty fictional contacts. Lint and the production build passed with `KAREGHAR_LOCAL=1` and isolated `.kareghar/qa-sample-contacts` data. Public production reads confirmed 13 anonymous demand listings (6 open, 7 completed), 17 Impact demands and missing contacts on two sample and two regular artists. No hosted SQL, database reset or deployment was performed; the hidden four demands' exact state was not inspected through a database connection.
+
 Admin compatibility checks added on 16 November 2026 passed in `npm run test:security` and `node scripts/test-migrations.mjs`. Both start with an admin granted under migration 003 and preserve its credentials/grant through current upgrades. SQLite checks use the real authentication/profile/password/moderation modules, including historical blank admin email/contact, session invalidation, private demand access boundaries and owner-only rating/sharing guards. The PostgreSQL rehearsal verifies the preserved admin row and current profile/moderation SQL. The existing local admin was inspected read-only for schema and active-grant status; no password was extracted or changed. This does not verify a hosted Vercel database or a live admin browser session.
 
 - Dependencies: the initial baseline `npm ci` completed. A later clean reinstall hit a Windows lock on loaded native modules; `npm install` restored the dependencies successfully.
@@ -14,7 +18,7 @@ Admin compatibility checks added on 16 November 2026 passed in `npm run test:sec
 
 The regression harness covers migration upgrades and repeated initialization, idempotent pilot seeding, offered/custom quotes and blank-quote rejection, immutable initial quotations, the 15-minute editing window, participant/owner authorization, cancellation and archived history, private messages and media, finished-submission ranking eligibility, portfolio ownership/cleanup, profile/photo changes, and account deletion/session invalidation.
 
-## Browser walkthrough
+## Browser walkthrough, 15 November 2026
 
 - Artist and customer signup/login; artist onboarding opens the portfolio tab.
 - Add portfolio work through a modal; editing and Cancel preserve the saved entry.
@@ -23,7 +27,7 @@ The regression harness covers migration upgrades and repeated initialization, id
 - Artist sends a custom quotation, edits it within the allowed window, and retains the initial quotation in History.
 - Customer and artist exchange private messages; unread badges appear; marking updates as read clears the badge.
 - Customer selects the artist with the contact-before-work acknowledgment; the agreed fee matches the edited quote.
-- Artist uploads a WAV submission; an inline audio player appears. The current workflow marks the demand Completed at submission.
+- Artist uploads a WAV submission; an inline audio player appears. The workflow at that time marked the demand Completed at submission; the 16 November change moves completion to proposal acceptance, as covered by the automated checks above.
 - Discovery excludes the customer's own commission; public status choices include open and completed work only.
 - Category filtering and Clear filters reset both category and dependent form controls.
 - Public portfolio slideshow advances and switches to a grid.
@@ -31,7 +35,7 @@ The regression harness covers migration upgrades and repeated initialization, id
 
 ## Deployment boundary
 
-Publishing source does not release the application or mutate a hosted database. Apply outstanding migrations in order through `migrations/008_demand_naming.sql` before deploying this application version. Existing installations with migrations 001–003 need 004–008, each once. The audit also rehearsed PostgreSQL migrations, RLS/grants and application queries using isolated in-memory PGlite with stub Supabase roles/storage metadata. Actual hosted permissions, the private Supabase Storage path and simultaneous PostgreSQL transactions still require deployment-environment checks. External portfolio URLs depend on the remote host permitting embedding. Synthetic audit accounts and uploads were kept in isolated local directories. The latest verification scope and operational rules are in AGENTS.md; the dated walkthroughs below retain their original context.
+Pushing source may trigger a connected host to deploy; it does not apply database migrations. Apply outstanding migrations through `migrations/009_selection_completion.sql` for this version, following [the rollout guide](DEPLOYMENT-009.md). Existing installations with migrations 001–003 need 004–009, each once. The audit also rehearsed PostgreSQL migrations, RLS/grants and application queries using isolated in-memory PGlite with stub Supabase roles/storage metadata. Actual hosted permissions, the private Supabase Storage path and simultaneous PostgreSQL transactions still require deployment-environment checks. External portfolio URLs depend on the remote host permitting embedding. Synthetic audit accounts and uploads were kept in isolated local directories. The latest verification scope and operational rules are in AGENTS.md; the dated walkthroughs below retain their original context.
 
 ## Customer ratings and demand terminology, 15 November 2026
 

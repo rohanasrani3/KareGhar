@@ -5,7 +5,7 @@ Scoring is 4 × 25 points: size of problem, severity, quality of solution, and
 **proven impact**. Proven impact is also tie-breaker #1, and it means *real
 deployment data*. Real pilot data is how we win.
 
-Customers post regional art, music, dance and craft demands. Artists send private proposals, and customers choose an artist. Work and payment happen directly between participants. Uploading the finished work marks the demand Completed and enables the owning customer's rating; there is no separate customer approval of the finished work. The customer independently chooses whether to publish it.
+Customers post regional art, music, dance and craft demands. Artists send private proposals, and customers choose an artist. Work and payment happen directly between participants. Accepting a proposal marks the demand Completed immediately. The selected artist can upload finished work afterward, enabling the owning customer's rating and submission-based ranking; there is no separate customer approval of the finished work. The customer independently chooses whether to publish it.
 
 Current product decisions and exact copy are recorded in [../CHANGELOG.md](../CHANGELOG.md) and [../AGENTS.md](../AGENTS.md). [API.md](API.md) maintains the action/read contracts, and [EXPERIENCE-QA.md](EXPERIENCE-QA.md) records local checks and hosted-release limits. Use demand, proposal and Work history in the interface; the main navigation says Find Demand and the page/footer say Demand board.
 

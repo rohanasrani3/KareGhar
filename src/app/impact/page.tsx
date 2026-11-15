@@ -14,9 +14,9 @@ export default async function Page() {
   const [{ t }, [s]] = await Promise.all([
     language(),
     query<Stats>(`SELECT COUNT(*) AS posted,
-    COUNT(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN 1 END) AS selected,
-    COUNT(DISTINCT CASE WHEN status IN ('progress','done') THEN artist END) AS artists,
-    COUNT(DISTINCT customer) AS customers, COALESCE(SUM(CASE WHEN artist IS NOT NULL AND status IN ('progress','done') THEN fee ELSE 0 END),0) AS fees,
+    COUNT(CASE WHEN artist IS NOT NULL AND status='done' THEN 1 END) AS selected,
+    COUNT(DISTINCT CASE WHEN status='done' THEN artist END) AS artists,
+    COUNT(DISTINCT customer) AS customers, COALESCE(SUM(CASE WHEN artist IS NOT NULL AND status='done' THEN fee ELSE 0 END),0) AS fees,
     COUNT(CASE WHEN status='finding' THEN 1 END) AS finding
     FROM demands`),
   ]);

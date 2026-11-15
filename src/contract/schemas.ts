@@ -72,7 +72,7 @@ export interface Commission {
   brief: string;
   form: string;
   fee: number;
-  status: "finding" | "progress" | "done";
+  status: "finding" | "done";
   customer: string;
   customer_name: string;
   customer_username: string;

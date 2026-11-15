@@ -5,15 +5,14 @@ import Link from "next/link";
 export function stateName(s: string, hi: boolean) {
   return (
     {
-      finding: hi ? "प्रस्ताव आमंत्रित हैं" : "Open for proposals",
-      progress: hi ? "काम जारी है" : "In progress",
+      finding: hi ? "प्रस्ताव प्रक्रिया में" : "In progress",
       done: hi ? "पूर्ण" : "Completed",
     } as Record<string, string>
   )[s];
 }
 export async function Sample() {
   const { t } = await language();
-  return <span className="sample" title={t("A sample listing that shows how KareGhar works. It isn't counted on the Impact page.", "KareGhar कैसे काम करता है, यह दिखाने वाली नमूना सूची। इसे प्रभाव पृष्ठ पर नहीं गिना जाता।")}>{t("Sample", "नमूना")}</span>;
+  return <span className="sample" title={t("A fictional sample listing that shows how KareGhar works. It is included on the Impact page.", "KareGhar कैसे काम करता है, यह दिखाने वाली काल्पनिक नमूना सूची। इसे प्रभाव पृष्ठ पर गिना जाता है।")}>{t("Sample", "नमूना")}</span>;
 }
 export async function Filters({
   all,
@@ -51,7 +50,7 @@ export async function Filters({
       )}
       <div className="filter-actions">
         <button className="button">{t("Apply filters", "फ़िल्टर लगाएँ")}</button>
-        {(params.category || params.form || (status && params.status !== "finding")) && <Link className="clear-filters" href={href ?? (status ? "/commissions" : "/talent")}>{t("Clear filters", "फ़िल्टर हटाएँ")} <span aria-hidden="true">×</span></Link>}
+        {(params.category || params.form || (status && params.status)) && <Link className="clear-filters" href={href ?? (status ? "/commissions" : "/talent")}>{t("Clear filters", "फ़िल्टर हटाएँ")} <span aria-hidden="true">×</span></Link>}
       </div>
     </form>
   );

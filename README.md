@@ -1,87 +1,57 @@
 # KareGhar
 
-Empowering artisans. Enabling businesses
+**Empowering artisans. Enabling businesses.**
 
-Customers post demands. Artists send private proposals, the customer selects an artist, and the artist submits a finished file. Submission automatically marks the demand completed, enables the customer’s rating, and leaves public sharing to the customer. Find artists by art category, form and completed demands. Switch between English and Hindi in the header.
+KareGhar connects customers with artists working in India's folk art, music, dance and crafts. Customers post a **demand** describing what they need; artists respond with private **proposals**. Browse artists and demands, explore portfolios, and switch between English and Hindi.
 
-There is no customer acceptance step for finished work. Work and payment take place directly between the participants. A proposal selection alone does not enable rating; the artist must submit the finished work first. See [the change log](CHANGELOG.md) for the approved changes and wording recorded on 15 November 2026.
+**Post a demand → Choose an artist → Submit finished work → Rate and optionally share**
 
-## Run locally
+## For artists
 
-Use Node.js 24. Run `npm ci` then `npm run dev`. Open http://localhost:3000. Local development automatically creates a persistent SQLite database and media directory under the ignored `.kareghar/` folder. Sample listings carry a small Sample tag. Sign up separately as a customer and an artist to try the full workflow.
+1. **Create an artist account.** Sign up, then sign in. Provide a public contact so customers can reach you; your login email stays private.
+2. **Build your portfolio.** Add work with its art category and form using an upload or external link. Complete your profile with a bio, photo and relevant links.
+3. **Find a demand.** Open **Find Demand**, filter by category or art form, and review the brief, budget, deadline and required output.
+4. **Send a proposal.** Describe your approach and timeline, choosing the offered budget or your own quotation. Track the response in **Work history**.
+5. **Get selected.** Discuss scope, price, timing and payment with the customer. When they accept your proposal, the demand becomes **Completed** and finished-work upload becomes available.
+6. **Submit finished work.** When ready, upload the requested file, or supported evidence for physical work or a live performance, in Work history (up to 5 MiB). This lets the customer rate you.
 
-- `/commissions` — Demand board for browsing customer demands; the main navigation calls it Find Demand
-- `/talent` — filter and rank artists
-- `/profile` — view and edit personal details, bio, public contact and photo
-- `/profile?tab=portfolio` — add, edit and remove portfolio work
-- `/profile/history` — Work history: private proposals, quotations, messages, progress, submissions and customer ratings
-- `/profile?tab=security` — password and account deletion
-- `/impact` — demand connections and agreed fees
+Demands with submitted finished work contribute to your artist ranking, including private work. Proposal acceptance alone, portfolio uploads and star ratings do not change that ranking.
 
-## Supabase and hosting
+## For customers
 
-1. Apply migrations/001_marketplace.sql followed by migrations/002_supabase.sql, migrations/003_moderation.sql, migrations/004_experience.sql, migrations/005_deadline.sql, migrations/006_ratings.sql, migrations/007_submission_workflow.sql and migrations/008_demand_naming.sql in the Supabase SQL editor. Apply each migration once, in order. Historical migrations 001–007 remain unchanged. Migration 004 adds profile fields, quotations, reference media, private messages, notifications and event history while preserving existing records. Migration 005 adds deadlines; migration 006 adds one customer rating per completed demand; migration 007 upgrades existing finished submissions to Done without a separate customer approval step. Migration 008 aligns physical storage with demand terminology while retaining records, constraints and access controls. Apply 008 before running this code against an existing PostgreSQL database. The second migration enables row-level security, revokes public API access and creates the private kareghar bucket; later migrations protect their new tables too.
-2. Set server-only DATABASE_URL (Supabase PostgreSQL connection string with TLS), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, NEXTAUTH_SECRET (random secret), and NEXTAUTH_URL (canonical HTTPS origin). Auth.js manages sessions. Keep privileged credentials off the client.
-3. Build with `npm run build` and serve with `npm start` on a Node host such as Render. Set the host runtime to Node 24. For an explicitly local production-build smoke test, use KAREGHAR_LOCAL=1, a local NEXTAUTH_URL and a temporary NEXTAUTH_SECRET.
-4. Set KAREGHAR_SEED_SAMPLES=1 only if sample records should be inserted into a connected database. Accounts created by signup are always real, single-role accounts.
+1. **Create a customer account.** Sign up, sign in and complete your profile. Your contact is public; your login email stays private.
+2. **Post a demand.** Add a title, brief, art category/form, budget, deadline and output format. Include a reference image if helpful.
+3. **Review proposals.** Open Work history to compare artists' approaches and quotations. Visit their portfolios and discuss details privately.
+4. **Choose an artist.** Agree on the terms, then accept their proposal. This locks the quotation and immediately marks the demand **Completed**.
+5. **Follow the work.** Keep the conversation in Work history. Before finished submission, you may cancel the selection with a reason; the demand reopens and the earlier history is retained.
+6. **Rate and share.** After the artist uploads the finished work, give a 1–5-star rating, editable later, and choose whether to publish the finished work or keep it private.
 
-Sample data (src/server/samples.ts) has nine invented customers, one invented artist for each of the 17 seed art forms, portfolio work and 44 demands across Finding, In progress and Done, with 1–4 customer ratings per artist. Portfolio media are real Wikimedia Commons photos (public/photos) and recordings (public/audio), credited in each caption and on /credits. Sample records cannot sign in or receive proposals. They count toward rankings, ratings and Impact with a visible Sample tag; the Impact page explains that sample fees are fictional. Seeding records a version in schema_migrations and is skipped once applied; bump SEED_VERSION in samples.ts when you change sample data. Rankings count only demands with an artist’s finished submission, not ordinary portfolio uploads.
+Work and payment are arranged directly between you and the artist. KareGhar does not handle payments.
 
-Local SQLite applies migrations automatically. Set KAREGHAR_DATA_DIR to a separate directory (for example `.kareghar/qa-experience`) for isolated local tests; the default is `.kareghar`. Work in progress and private conversations are available through Work history rather than public discovery. New customer and artist signups require public contact (1–240 characters after trimming), with a notice that it is visible on their public profile. Login email stays private. Existing accounts are not backfilled; profile contact editing remains available.
+## Proposals and Work history
 
-Run `npm run test:experience` for the isolated workflow regression checks and `npm run test:security` for persistent attempt limits, session invalidation, upload signatures/formats, private media access, byte ranges and deleted-account moderation. See [experience validation](docs/EXPERIENCE-QA.md) for the browser scenarios and deployment limitations.
+Each artist can send **one private proposal per demand** and edit it for **15 minutes**, while it remains active and the demand is open. Other artists cannot see that proposal or quotation.
 
-Customers can rate the artist from 1–5 stars in Work history only after finished work is submitted, and update their rating later. Artist profiles and directory tiles show the average and number of ratings; published finished work shows its individual rating. Private completions contribute to the average while their individual ratings remain participant-only. Ratings do not change completion-based ranks. User-facing terminology is demand, proposal and Work history; existing `/commissions` URLs remain compatible.
+**In progress** means the demand is open for proposals: the customer has not accepted an artist yet, even if proposals have already arrived. **Completed** means a proposal was accepted; finished-work upload happens afterward.
 
-Uploads are limited to 5 MiB and pass through the authenticated server before storage. File signatures determine the stored format; image/audio/video demands require the corresponding submission type. Physical/live/other demands accept any supported proof file. Profile photos are public. Finished files are private to participants until the customer publishes them. The media route checks access on every read, including byte-range requests and reads after a customer hides an output. Missing files return 404; unavailable storage returns 503.
+Open **Profile → Work history** to follow your posted demands or sent proposals:
 
-The selected artist's agreed quotation is private to the customer and that artist. Public discovery and other proposers see the original budget. Login attempts use a persistent per-username limit; password changes and account deletion share a per-account limit of 12 attempts per 15 minutes. Successful verification resets the relevant budget.
+- Browse **All activity**, or filter by **In progress**, **Completed** or **Unread**.
+- Open a demand for its proposals, quotations, deadline, messages, activity timeline and finished submission.
+- Customers have a separate private conversation with each proposing artist; artists see only their own thread.
+- Finished files stay private to the customer and selected artist until the customer publishes them. The customer can hide them again later.
 
-The current database uses `demands`, `demand_state`, `demand_events` and `demand_ratings`, with `demand` foreign-key columns. The old finished-work approval timestamp is retained as `legacy_accepted_at`. Existing `/commissions` URLs, Server Action names and TypeScript names remain compatible; see [the API contract](docs/API.md) for the migration mapping.
+Listings marked **Sample** demonstrate the product and do not accept proposals. Samples contribute to rankings, ratings and Impact; their displayed fees are fictional.
 
-Run `npm run lint` and `npm run build` before submitting.
+## Try it locally
 
-For an isolated PostgreSQL migration and workflow rehearsal, install the optional runtime with `npm install --prefix .kareghar/pg-audit --no-audit --no-fund @electric-sql/pglite`, then run `node scripts/test-migrations.mjs`. It uses in-memory PostgreSQL and does not connect to the deployment database.
+With Node.js 24, run these commands from the project directory:
 
-## Interface and branding
-
-The discovery heading and footer use **Demand board**; only the main navigation uses **Find Demand**. Artist responses are **proposals**, and the private workspace is **Work history**. The homepage explains contacting the artist to agree on scope, price, timing and payment, then rating after finished submission. English/Hindi labels and help are kept together.
-
-Populated portfolios have one blue **Add work** button at the top right. The bottom add-more tile is removed; an empty portfolio still offers **Add your first work**. Editing/removing a work continues through its dialog.
-
-The full header logo is `public/kareghar-logo.png`. The tab uses a transparent house-only crop at `public/kareghar-icon.png` (256×256) and `src/app/favicon.ico` (16, 32, 48, 64, 128 and 256px frames), declared in `src/app/layout.tsx`. The artwork comes from the original logo, with the wordmark and tagline excluded from the icon. Reopen a Chrome tab if its cached icon has not refreshed. Earlier designs under `design/logo-options` are archived concepts.
-
-The shared footer uses the approved folk-art marketplace paragraph and explains the Sample tag. Attribution appears in a separate **Credits** line at its bottom, linking to `/credits` for photographers, sources and licences. Homepage photographs and craft tiles have no overlaid credits. Exact English process/footer copy is recorded in [CHANGELOG.md](CHANGELOG.md).
-
-Impact reports agreed demand value, selected demands, unique selected artists, posting customers and average agreed fee. It includes real activity and sample data impact, explicitly explains that sample fees are fictional, removes completion totals/rates and does not claim verified payments or earnings.
-
-## Project documentation
-
-| File | Maintains |
-| --- | --- |
-| [AGENTS.md](AGENTS.md) | Product rules, asset decisions, runtime guidance and function index. |
-| [CHANGELOG.md](CHANGELOG.md) | Dated changes, approved wording and release notes. |
-| [docs/API.md](docs/API.md) | HTTP/read/Server Action contracts, authorization and metric definitions. |
-| [docs/EXPERIENCE-QA.md](docs/EXPERIENCE-QA.md) | Checks performed, results and verification limits. |
-| [docs/TEAM.md](docs/TEAM.md) | Team responsibilities and pilot handoff. |
-
-The changes recorded here are local. Before a hosted release, apply any outstanding migrations through 008 and verify PostgreSQL permissions and hosted media; see the Supabase instructions above.
-
-## Admin provisioning
-
-Run npm run admin:create -- Admin from the project directory to create a fresh administrator. The command generates a password and prints it once to your terminal. An optional email is the second argument. The database permits one account with a blank email. Public signup cannot grant admin access. Set DATABASE_URL when targeting the hosted database and apply migration 003 first. Local setup applies the migration automatically.
-
-For Vercel, admin access lives in the PostgreSQL `accounts` and `admin_grants` tables, not in the deployment files. If the deployed app uses the same database where the admin was provisioned, sign in with the existing credentials; no account migration is needed. A local SQLite admin does not transfer when source is deployed. To provision a fresh admin in the production database, apply migrations 001–008 first, then run these commands from `firstship` in PowerShell with Node 24 and dependencies installed:
-
-```powershell
-npx vercel link
-$env:NODE_ENV = "production"
-$env:KAREGHAR_LOCAL = "0"
-npx vercel env run -e production -- node scripts/create-admin.mjs Admin admin@example.com
+```sh
+npm ci
+npm run dev
 ```
 
-Link to the existing Vercel project and ensure its Production environment has the correct `DATABASE_URL`. `vercel env run` supplies that environment directly to the command ([Vercel CLI documentation](https://vercel.com/docs/cli/env#running-commands-with-environment-variables)). Production mode with local fallback disabled prevents accidentally provisioning SQLite if the connection variable is missing. Run provisioning once from your terminal, not in Vercel's build command. Save the generated password and use it at the deployed site's `/login`; the username is case-sensitive. This creates a fresh account with a new password, rather than copying the local account or promoting an existing signup. If the username/email already exists, the transaction fails without granting privileges; use a fresh username/email. A database-only admin creation does not require redeploying the site.
+Open [localhost:3000](http://localhost:3000) and create separate artist and customer accounts to try both journeys.
 
-Sign in at /login and open Moderation. The account page shows current commissions before suspension. Both suspension and restoration require a reason and confirmation. Admins cannot access another user's private proposals, email or unpublished media.
-
-Existing admin accounts remain compatible after applying outstanding migrations through 008: account IDs, usernames, password hashes and admin grants are preserved. Historical blank admin email/contact can remain blank when editing the profile; the public signup contact requirement does not backfill them. Moderation account details now include the member's public bio and contact with English/Hindi labels. Private login email, selected quotations, messages, ratings and media retain their existing access rules.
+Contributor and deployment guidance lives in [AGENTS.md](AGENTS.md). See [API contracts](docs/API.md) and [validation notes](docs/EXPERIENCE-QA.md) for technical details.

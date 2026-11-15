@@ -15,7 +15,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const [{ id }, user, { lang, t }, all] = await Promise.all([params, viewer(), language(), forms()]);
   if (user && await historyDetail(id, user.id)) redirect("/profile/history/" + id);
   const [c] = await commissions({}, id, user?.id);
-  if (!c || c.status === "progress") notFound();
+  if (!c) notFound();
   const form = all.find((f) => f.id === c.form);
   const formLabel = form?.[lang === "hi" ? "hi" : "name"] ?? c.form;
   return <div className="commission-workspace public-commission">
@@ -23,6 +23,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <header className="workspace-heading">
       <div className="commission-meta"><span className={"work-state state-" + c.status}>{stateName(c.status, lang === "hi")}</span><span>{formLabel}</span>{Boolean(c.sample) && <Sample />}</div>
       <h1>{c.title}</h1>
+      {c.status === "done" && <p className="field-help">{t("Completed means the customer has accepted an artist's proposal. Finished work can be uploaded afterward and is shown here only if the customer shares it.", "पूर्ण का अर्थ है कि ग्राहक ने कलाकार का प्रस्ताव स्वीकार कर लिया है। तैयार कार्य बाद में अपलोड हो सकता है और यहाँ तभी दिखेगा जब ग्राहक उसे साझा करे।")}</p>}
     </header>
     <div className="commission-layout">
       <div className="commission-main">

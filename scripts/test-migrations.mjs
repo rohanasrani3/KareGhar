@@ -9,6 +9,7 @@ import { runInNewContext } from "node:vm";
 import { randomUUID } from "node:crypto";
 import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
+import { checkSampleContacts } from "./check-sample-contacts.mjs";
 
 const root = process.cwd(), require = createRequire(import.meta.url);
 const runtime = process.env.PG_AUDIT_MODULE || resolve(root, ".kareghar/pg-audit/node_modules/@electric-sql/pglite/dist/index.js");
@@ -26,7 +27,9 @@ try {
        ('legacy-artist','legacy_artist','legacy-artist@example.invalid','Legacy artist','artist','');
       INSERT INTO forms(id,category,name,hi) VALUES('legacy-form','painting','Legacy form','Legacy form');
       INSERT INTO commissions(id,customer,artist,form,title,brief,fee,status,output,created)
-       VALUES('legacy-demand','legacy-customer','legacy-artist','legacy-form','Legacy work','Preserve history',789,'progress','legacy.png',123);
+       VALUES('legacy-demand','legacy-customer','legacy-artist','legacy-form','Legacy work','Preserve history',789,'progress','legacy.png',123),
+       ('legacy-pending','legacy-customer','legacy-artist','legacy-form','Selected work','No submission yet',345,'progress','',124),
+       ('legacy-unassigned','legacy-customer',NULL,'legacy-form','Unassigned work','Recover to open',123,'progress','',125);
       INSERT INTO proposals(id,commission,artist,message) VALUES('legacy-proposal','legacy-demand','legacy-artist','Private legacy proposal');`);
     if (name.startsWith("003_")) await db.exec(`
       INSERT INTO accounts(id,username,email,name,role,password_hash)
@@ -42,6 +45,11 @@ try {
   }
 
   const [legacy] = await q("SELECT * FROM demands WHERE id='legacy-demand'");
+  await db.exec(readFileSync("migrations/009_selection_completion.sql", "utf8"));
+  const [pending] = await q("SELECT status,output,submitted_at,fee FROM demands WHERE id='legacy-pending'");
+  assert.deepEqual(pending, { status: "done", output: "", submitted_at: 0, fee: 345 });
+  assert.equal((await q("SELECT status FROM demands WHERE id='legacy-unassigned'"))[0].status, "finding");
+  assert.equal((await q("SELECT COUNT(*)::integer AS n FROM schema_migrations WHERE version='009_selection_completion'"))[0].n, 1);
   const [legacyAdmin] = await q("SELECT * FROM account_state WHERE id='legacy-admin'");
   assert.equal(legacyAdmin.effective_role, "admin");
   assert.equal(legacyAdmin.password_hash, "preserved-admin-hash");
@@ -125,6 +133,8 @@ try {
   for (const form of ART_FORMS) await q("INSERT INTO forms(id,category,name,hi) VALUES($1,$2,$3,$4)", [form.id, form.category, form.name, form.hi]);
   await load("src/server/samples.ts").seedSamples(q);
   await load("src/server/samples.ts").seedSamples(q);
+  assert.equal((await q("SELECT COUNT(*) AS n FROM accounts WHERE sample=1 AND TRIM(contact)=''"))[0].n, 0);
+  await checkSampleContacts(q, load("src/server/samples.ts").seedSamples);
   assert.equal((await market.forms()).length, ART_FORMS.length + 1);
   assert((await market.artists()).length > 0);
   await market.artists({ category: "painting", form: "warli" });
@@ -147,6 +157,11 @@ try {
   session = "legacy-customer";
   assert.equal(await invoke(messaging.sendMessage, { id, artist: "legacy-artist", body: "Confirm details privately" }), "saved");
   assert.equal(await invoke(actions.commissionAction, { id, action: "select", proposal: proposal.id, acknowledged: "on" }), "saved");
+  assert.equal((await market.commissions({}, id))[0].status, "done");
+  assert.equal((await market.commissions({}, id))[0].output, "");
+  assert.equal((await q("SELECT submitted_at FROM demands WHERE id=$1", [id]))[0].submitted_at, 0);
+  assert.equal(await invoke(actions.commissionAction, { id, action: "rate", rating: 5 }), "conflict");
+  assert.equal(await invoke(actions.commissionAction, { id, action: "visibility", public: "on" }), "conflict");
   assert.equal(await invoke(actions.commissionAction, { id, action: "cancel", reason: "Change schedule" }), "saved");
   await q("UPDATE proposals SET status='active' WHERE id=$1", [proposal.id]);
   assert.equal(await invoke(actions.commissionAction, { id, action: "select", proposal: proposal.id, acknowledged: "on" }), "saved");
@@ -197,7 +212,7 @@ try {
   assert.equal(dashboard.person.contact, "Public contact");
   assert.equal(Object.hasOwn(dashboard.person, "email"), false);
   assert.equal((await q("SELECT password_hash FROM accounts WHERE id='legacy-admin'"))[0].password_hash, "preserved-admin-hash");
-  console.log("PASS: PostgreSQL migrations 001–008, legacy admin grant/credentials/profile compatibility, preserved records/FKs, renamed constraints/indexes, RLS/grants, sample idempotency, public/private projections and full demand workflow.");
+  console.log("PASS: PostgreSQL migrations 001–009, legacy admin grant/credentials/profile compatibility, preserved records/FKs, renamed constraints/indexes, RLS/grants, sample idempotency, public/private projections and full demand workflow.");
 } finally {
   await db.close();
 }

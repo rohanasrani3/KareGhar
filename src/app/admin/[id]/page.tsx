@@ -53,7 +53,7 @@ export default async function Page({
       {!jobs.length && <p>{t("No demands.", "कोई माँग नहीं है।")}</p>}
       {jobs.map((c) => (
         <p key={c.id}>
-          {!c.paused && c.status !== "progress" ? <Link href={"/commissions/" + c.id}>{c.title}</Link> : c.title}{", "}
+          {!c.paused ? <Link href={"/commissions/" + c.id}>{c.title}</Link> : c.title}{", "}
           {stateName(c.status, lang === "hi")}
           {c.paused ? ", " + t("Paused", "रुका हुआ") : ""}
         </p>

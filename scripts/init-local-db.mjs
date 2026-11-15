@@ -31,6 +31,8 @@ export function initializeLocalDb(db) {
         db.exec(readFileSync("migrations/007_submission_workflow.sql", "utf8").split("-- PostgreSQL privileges")[0].replace("BEGIN;", ""));
       db.exec(readFileSync("migrations/008_demand_naming.sql", "utf8").split("-- PostgreSQL privileges")[0].replace("BEGIN;", ""));
     }
+    if (!db.prepare("SELECT 1 FROM schema_migrations WHERE version='009_selection_completion'").get())
+      db.exec(readFileSync("migrations/009_selection_completion.sql", "utf8").replace("BEGIN;", "").replace("COMMIT;", ""));
     db.exec("COMMIT");
   } catch (error) {
     db.exec("ROLLBACK");

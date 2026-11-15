@@ -8,6 +8,6 @@ export function directoryFilters(all: Form[], params: { category?: unknown; form
   return {
     category: category || selectedForm?.category || "",
     form: selectedForm?.id || "",
-    status: params.status === "" || params.status === "done" ? params.status : "finding",
+    status: params.status === "finding" || params.status === "done" ? params.status : "",
   };
 }

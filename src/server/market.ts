@@ -35,7 +35,7 @@ export function commissions(filters: Filters = {}, id = "", viewerId = "") {
     CASE WHEN (c.paused=0 AND c.status='done' AND c.published=1) OR c.customer=$5 OR c.artist=$5 THEN c.output ELSE '' END AS output
     FROM demand_state c JOIN accounts a ON a.id=c.customer LEFT JOIN accounts b ON b.id=c.artist JOIN forms f ON f.id=c.form
     WHERE (c.paused=0 OR ($4<>'' AND (c.customer=$5 OR c.artist=$5)))
-      AND (c.status<>'progress' OR ($4<>'' AND (c.customer=$5 OR c.artist=$5)))
+      AND c.status IN ('finding','done')
       AND ($4<>'' OR $5='' OR (c.customer<>$5 AND COALESCE(c.artist,'')<>$5))
       AND ($1='' OR f.category=$1) AND ($2='' OR c.form=$2) AND ($3='' OR c.status=$3) AND ($4='' OR c.id=$4)
     ORDER BY c.created DESC,c.id`,

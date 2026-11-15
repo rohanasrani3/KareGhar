@@ -27,7 +27,7 @@ const messages: Record<string, [string, string]> = {
   ],
   saved: ["Saved.", "सहेजा गया।"],
   expired: ["The 15-minute editing window has ended.", "संपादन के लिए 15 मिनट का समय समाप्त हो गया है।"],
-  active: ["Complete or cancel your active demands before deleting your account.", "खाता हटाने से पहले सक्रिय माँगें पूरी करें या रद्द करें।"],
+  active: ["Submit the finished work or cancel the selection before deleting your account.", "खाता हटाने से पहले तैयार कार्य जमा करें या चयन रद्द करें।"],
   acknowledged: ["Please confirm that you will contact the other person before starting work.", "कृपया पुष्टि करें कि काम शुरू करने से पहले आप दूसरे व्यक्ति से संपर्क करेंगे।"],
 };
 /** Hosts such as Vercel reject request bodies over 4.5 MB before the app runs; stay below it. */

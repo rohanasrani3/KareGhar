@@ -121,7 +121,7 @@ export async function deleteAccount(_: string, data: FormData) {
     // selection that held this lock may have just created active work.
     if (!await currentSession(q, user)) return "denied";
     const [current] = await q<{ photo: string }>("SELECT photo FROM accounts WHERE id=$1", [user.id]);
-    const changed = await q("UPDATE accounts SET deleted=1,revision=revision+1,name='Deleted account',username=$1,email=$2,password_hash='',company='',links='[]',photo='',bio='',contact='' WHERE id=$3 AND revision=$5 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$4) AND NOT EXISTS(SELECT 1 FROM demands WHERE status='progress' AND (customer=$3 OR artist=$3)) RETURNING id", ["deleted_" + anonymous, anonymous + "@deleted.invalid", user.id, user.session_version, user.revision]);
+    const changed = await q("UPDATE accounts SET deleted=1,revision=revision+1,name='Deleted account',username=$1,email=$2,password_hash='',company='',links='[]',photo='',bio='',contact='' WHERE id=$3 AND revision=$5 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND session_version=$4) AND NOT EXISTS(SELECT 1 FROM demands WHERE status='done' AND artist IS NOT NULL AND output='' AND (customer=$3 OR artist=$3)) RETURNING id", ["deleted_" + anonymous, anonymous + "@deleted.invalid", user.id, user.session_version, user.revision]);
     if (!changed.length) return "active";
     if (current.photo) removedUploads.push(current.photo);
     const removedWorks = await q<{ url: string }>("DELETE FROM works WHERE artist=$1 RETURNING url", [user.id]);
@@ -217,7 +217,7 @@ export async function commissionAction(_: string, data: FormData) {
   if (!user) return "denied";
   let key: string | null = null;
   if (action === "submit") {
-    const [allowed] = await query<{ output_type: string }>("SELECT id,output_type FROM demand_state WHERE id=$1 AND artist=$2 AND status='progress' AND output='' AND paused=0 AND sample=0", [id, user.id]);
+    const [allowed] = await query<{ output_type: string }>("SELECT id,output_type FROM demand_state WHERE id=$1 AND artist=$2 AND status='done' AND output='' AND paused=0 AND sample=0", [id, user.id]);
     if (!allowed || user.role !== "artist") return "denied";
     const file = data.get("file");
     if (!(file instanceof File)) return "file";
@@ -258,16 +258,16 @@ export async function commissionAction(_: string, data: FormData) {
         if (!proposal) return "conflict";
         const participant = await q("UPDATE accounts SET revision=revision WHERE id=$1 AND deleted=0 AND id IN (SELECT id FROM account_state WHERE suspended=0 AND sample=0) RETURNING id", [proposal.artist]);
         if (!participant.length) return "conflict";
-        await q("UPDATE demands SET status='progress',artist=$1,fee=$2,selected_at=$3 WHERE id=$4", [proposal.artist, proposal.quote, now, id]);
+        await q("UPDATE demands SET status='done',artist=$1,fee=$2,selected_at=$3 WHERE id=$4", [proposal.artist, proposal.quote, now, id]);
         await event(q, id, user.id, "selected", now, proposal.artist, "", proposal.quote);
-      } else if (action === "cancel" && user.role === "customer" && c.customer === user.id && c.status === "progress" && c.artist && !c.output) {
+      } else if (action === "cancel" && user.role === "customer" && c.customer === user.id && c.status === "done" && c.artist && !c.output) {
         const reason = paragraph.safeParse(data.get("reason"));
         if (!reason.success) return "invalid";
         await event(q, id, user.id, "cancelled", now, c.artist, reason.data, c.fee, c.output);
         await q("UPDATE proposals SET status='cancelled',updated=$1 WHERE demand=$2 AND artist=$3", [now, id, c.artist]);
         await q("UPDATE demands SET status='finding',artist=NULL,fee=original_fee,output='',published=0,selected_at=0,submitted_at=0 WHERE id=$1", [id]);
-      } else if (action === "submit" && user.role === "artist" && c.artist === user.id && c.status === "progress" && !c.output && key) {
-        await q("UPDATE demands SET status='done',output=$1,submitted_at=$2 WHERE id=$3", [key, now, id]);
+      } else if (action === "submit" && user.role === "artist" && c.artist === user.id && c.status === "done" && !c.output && key) {
+        await q("UPDATE demands SET output=$1,submitted_at=$2 WHERE id=$3", [key, now, id]);
         await event(q, id, user.id, "submitted", now, user.id, "", c.fee, key);
       } else if (action === "rate" && user.role === "customer" && c.customer === user.id && c.status === "done" && c.output && c.artist) {
         const score = z.coerce.number().int().min(1).max(5).safeParse(data.get("rating"));

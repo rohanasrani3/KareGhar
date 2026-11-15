@@ -11,14 +11,18 @@ import { RECORDINGS } from "@/content/recordings";
  *
  * Product rules (AGENTS.md): samples carry a small "Sample" tag on public pages,
  * are read-only, cannot sign in (empty password hash, login requires sample=0),
- * count toward artist rankings and ratings, and are excluded from Impact totals.
+ * count toward artist rankings, ratings and Impact totals.
  *
  * Seeding is idempotent and runs on local SQLite, or on PostgreSQL when
  * KAREGHAR_SEED_SAMPLES=1. A finished run records SEED_VERSION in
  * schema_migrations so later cold starts skip it: bump SEED_VERSION whenever
- * anything in this file changes.
+ * catalogue membership/content changes. Migration 009 updates the existing
+ * acceptance states without replaying or expanding a hosted catalogue.
+ * Contact-only upgrades use CONTACT_VERSION separately
+ * so an existing catalogue can be patched without inserting more demands.
  */
 const SEED_VERSION = "samples:2026-11-15-live";
+const CONTACT_VERSION = "samples:2026-11-16-contacts";
 
 type Value = string | number | null;
 type Query = (sql: string, values?: Value[]) => Promise<unknown[]>;
@@ -32,7 +36,9 @@ type SampleDemand = {
   title: string;
   brief: string;
   fee: number;
-  status: "finding" | "progress" | "done";
+  status: "finding" | "done";
+  /** Accepted proposal with finished work still to be uploaded. */
+  submitted?: boolean;
   artist?: string;
   /** Done only: the submitted file. Defaults to the form's photo. */
   output?: string;
@@ -153,11 +159,11 @@ export const SAMPLE_COMMISSIONS: SampleDemand[] = [
   { id: "demo-print-totes", customer: "demo-boutique", form: "block-print", title: "Block-printed tote bags for a launch", brief: "Sixty canvas totes printed with our logo motif in two colours.", fee: 9000, status: "done", artist: "demo-blockprinter", published: false, rating: 3 },
   { id: "demo-handloom-runners", customer: "demo-customer", form: "handloom", title: "Handloom table runners", brief: "Six runners in natural cotton with an indigo stripe, 14 × 72 inches.", fee: 7500, status: "done", artist: "demo-handloom", published: false, rating: 5 },
   { id: "demo-handloom-stoles", customer: "demo-boutique", form: "handloom", title: "Silk-cotton stoles for winter", brief: "Twenty stoles in four colours with a simple border.", fee: 18000, status: "done", artist: "demo-handloom", published: false, rating: 4 },
-  // In progress
-  { id: "demo-jingle", customer: "demo-customer", form: "marathi-folk", title: "Marathi folk jingle", brief: "Record a short folk melody for a café opening.", fee: 3000, status: "progress", artist: "demo-musician" },
-  { id: "demo-gond-menu", customer: "demo-cafe", form: "gond", title: "Gond illustrations for our new menu", brief: "Six small Gond-style illustrations of tea, snacks and birds for a printed menu card.", fee: 9000, status: "progress", artist: "demo-gond" },
-  { id: "demo-chikan-kurtas", customer: "demo-hotel", form: "chikankari", title: "Chikankari detailing on staff kurtas", brief: "Hand chikankari yokes on 12 white cotton kurtas for front-desk staff. Simple floral pattern.", fee: 16000, status: "progress", artist: "demo-chikankari" },
-  { id: "demo-kathak-launch", customer: "demo-events", form: "kathak", title: "Kathak performance at a product launch", brief: "A 10-minute Kathak piece with live tabla to open a jewellery brand launch.", fee: 15000, status: "progress", artist: "demo-kathak" },
+  // Completed on proposal acceptance; no finished submission yet
+  { id: "demo-jingle", customer: "demo-customer", form: "marathi-folk", title: "Marathi folk jingle", brief: "Record a short folk melody for a café opening.", fee: 3000, status: "done", submitted: false, artist: "demo-musician" },
+  { id: "demo-gond-menu", customer: "demo-cafe", form: "gond", title: "Gond illustrations for our new menu", brief: "Six small Gond-style illustrations of tea, snacks and birds for a printed menu card.", fee: 9000, status: "done", submitted: false, artist: "demo-gond" },
+  { id: "demo-chikan-kurtas", customer: "demo-hotel", form: "chikankari", title: "Chikankari detailing on staff kurtas", brief: "Hand chikankari yokes on 12 white cotton kurtas for front-desk staff. Simple floral pattern.", fee: 16000, status: "done", submitted: false, artist: "demo-chikankari" },
+  { id: "demo-kathak-launch", customer: "demo-events", form: "kathak", title: "Kathak performance at a product launch", brief: "A 10-minute Kathak piece with live tabla to open a jewellery brand launch.", fee: 15000, status: "done", submitted: false, artist: "demo-kathak" },
   // Finding an artist
   { id: "demo-print", customer: "demo-customer", form: "block-print", title: "Hand-printed table runners", brief: "Design six cotton runners with Bagru floral motifs for our café.", fee: 4500, status: "finding" },
   { id: "demo-madhubani-lobby", customer: "demo-hotel", form: "madhubani", title: "Madhubani panels for the hotel lobby", brief: "Three 3 × 4 ft Madhubani panels showing local festivals for the lobby wall. Bright natural colours.", fee: 25000, status: "finding" },
@@ -174,8 +180,19 @@ const DAY = 86400000;
 const START = Date.UTC(2026, 6, 1); // 1 July 2026; demands follow every 2.5 days.
 const isoDate = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
+async function seedSampleContacts(query: Query) {
+  if ((await query("SELECT version FROM schema_migrations WHERE version=$1", [CONTACT_VERSION])).length) return;
+  await query(`UPDATE accounts SET contact=username || '@example.invalid'
+    WHERE sample=1 AND deleted=0 AND TRIM(contact)=''
+      AND NOT EXISTS (SELECT 1 FROM admin_grants g WHERE g.account=accounts.id)`);
+  await query("INSERT INTO schema_migrations(version) VALUES($1) ON CONFLICT DO NOTHING", [CONTACT_VERSION]);
+}
+
 export async function seedSamples(query: Query) {
-  if ((await query("SELECT version FROM schema_migrations WHERE version=$1", [SEED_VERSION])).length) return;
+  if ((await query("SELECT version FROM schema_migrations WHERE version=$1", [SEED_VERSION])).length) {
+    await seedSampleContacts(query);
+    return;
+  }
   function all<T>(items: T[], run: (item: T) => Promise<unknown>) { return Promise.all(items.map(run)); }
   const sampleArtist = "AND artist IN (SELECT id FROM accounts WHERE sample=1)";
 
@@ -186,13 +203,16 @@ export async function seedSamples(query: Query) {
     );
     // Insert with the id as username (always free), then take the readable username
     // only when no other account holds it. Existing databases: refresh trusted
-    // sample identities in place. The login
-    // email stays private; no public contact is shown because samples cannot reply.
-    await query("UPDATE accounts SET name=$1,bio=$2,contact='',company=$3 WHERE id=$4 AND sample=1", [a.name, a.bio, a.company ?? "", a.id]);
+    // sample identities in place. Preserve supplied public contact; fill missing
+    // sample contact with a fictional address without reading private login email.
+    await query("UPDATE accounts SET name=$1,bio=$2,company=$3 WHERE id=$4 AND sample=1", [a.name, a.bio, a.company ?? "", a.id]);
     await query(
       "UPDATE accounts SET username=$1 WHERE id=$2 AND sample=1 AND NOT EXISTS (SELECT 1 FROM accounts o WHERE lower(o.username)=lower($1) AND o.id<>$2)",
       [a.username, a.id],
     );
+    await query(`UPDATE accounts SET contact=username || '@example.invalid'
+      WHERE id=$1 AND sample=1 AND deleted=0 AND TRIM(contact)=''
+        AND NOT EXISTS (SELECT 1 FROM admin_grants g WHERE g.account=accounts.id)`, [a.id]);
   });
 
   await all(SAMPLE_WORKS, async (w) => {
@@ -204,11 +224,12 @@ export async function seedSamples(query: Query) {
   await all([...SAMPLE_COMMISSIONS.entries()], async ([i, c]) => {
     const created = START + Math.round(i * 2.5 * DAY);
     const selected = c.artist ? created + DAY : 0;
-    const submitted = c.status === "done" ? created + 6 * DAY : 0;
-    const deadline = isoDate(created + (c.status === "done" ? 21 : c.status === "progress" ? 60 : 75) * DAY);
+    const hasSubmission = c.status === "done" && c.submitted !== false;
+    const submitted = hasSubmission ? created + 6 * DAY : 0;
+    const deadline = isoDate(created + (hasSubmission ? 21 : c.artist ? 60 : 75) * DAY);
     const outputType = c.outputType ?? (MUSIC.has(c.form) ? "audio" : DANCE.has(c.form) ? "live" : CRAFT.has(c.form) ? "physical" : "image");
-    const output = c.status === "done" ? c.output ?? photo(c.form) : "";
-    const published = c.status === "done" && c.published !== false ? 1 : 0;
+    const output = hasSubmission ? c.output ?? photo(c.form) : "";
+    const published = hasSubmission && c.published !== false ? 1 : 0;
     await query(
       "INSERT INTO demands(id,customer,form,title,brief,fee,status,artist,sample,created) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9) ON CONFLICT DO NOTHING",
       [c.id, c.customer, c.form, c.title, c.brief, c.fee, c.status, c.artist ?? null, created],
@@ -220,7 +241,7 @@ export async function seedSamples(query: Query) {
     );
   });
 
-  await all(SAMPLE_COMMISSIONS.filter((c) => c.status === "done" && c.rating && c.artist), async (c) => {
+  await all(SAMPLE_COMMISSIONS.filter((c) => c.status === "done" && c.submitted !== false && c.rating && c.artist), async (c) => {
     const rated = START + Math.round(SAMPLE_COMMISSIONS.indexOf(c) * 2.5 * DAY) + 7 * DAY;
     await query(
       "INSERT INTO demand_ratings(demand,customer,artist,score,created,updated) SELECT id,customer,artist,CAST($2 AS INTEGER),CAST($3 AS BIGINT),CAST($3 AS BIGINT) FROM demands WHERE id=$1 AND sample=1 AND status='done' ON CONFLICT DO NOTHING",
@@ -229,5 +250,6 @@ export async function seedSamples(query: Query) {
     await query("UPDATE demand_ratings SET score=$1 WHERE demand=$2 AND demand IN (SELECT id FROM demands WHERE sample=1)", [c.rating!, c.id]);
   });
 
+  await seedSampleContacts(query);
   await query("INSERT INTO schema_migrations(version) VALUES($1) ON CONFLICT DO NOTHING", [SEED_VERSION]);
 }

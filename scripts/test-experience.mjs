@@ -11,6 +11,7 @@ import ts from "typescript";
 import { hash } from "@node-rs/argon2";
 import { renderToStaticMarkup } from "react-dom/server";
 import { initializeLocalDb } from "./init-local-db.mjs";
+import { checkSampleContacts } from "./check-sample-contacts.mjs";
 
 const require = createRequire(import.meta.url), root = process.cwd();
 const db = new DatabaseSync(":memory:");
@@ -27,7 +28,10 @@ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM demands WHERE id='legacy-job'
 assert.equal(db.prepare("SELECT status FROM demands WHERE id='legacy-submitted'").get().status, "done");
 assert.equal(db.prepare("SELECT submitted_at FROM demands WHERE id='legacy-submitted'").get().submitted_at, 321);
 assert.equal(db.prepare("SELECT output FROM demands WHERE id='legacy-submitted'").get().output, "legacy-finished.png");
-assert.equal(db.prepare("SELECT status FROM demands WHERE id='legacy-in-progress'").get().status, "progress");
+assert.equal(db.prepare("SELECT status FROM demands WHERE id='legacy-in-progress'").get().status, "done");
+assert.equal(db.prepare("SELECT output FROM demands WHERE id='legacy-in-progress'").get().output, "");
+assert.equal(db.prepare("SELECT submitted_at FROM demands WHERE id='legacy-in-progress'").get().submitted_at, 0);
+assert.equal(db.prepare("SELECT COUNT(*) AS n FROM schema_migrations WHERE version='009_selection_completion'").get().n, 1);
 assert.equal(db.prepare("SELECT published FROM demands WHERE id='legacy-published'").get().published, 1);
 assert.equal(db.prepare("SELECT COUNT(*) AS n FROM schema_migrations WHERE version='007_submission_workflow'").get().n, 1);
 
@@ -55,7 +59,7 @@ const mocks = {
   "server-only": {},
   "next/cache": { revalidatePath() {} },
   "next/headers": { cookies: async () => ({ set() {} }) },
-  "next/navigation": { redirect(path) { throw new Redirect(path); } },
+  "next/navigation": { redirect(path) { throw new Redirect(path); }, useRouter: () => ({ refresh() {}, push() {} }) },
   "@/server/auth": { viewer },
   "@/i18n/language": { language: async () => ({ lang: "en", t: (en) => en }) },
   "@/server/db": { query: q, transaction },
@@ -72,6 +76,7 @@ function load(file) {
   const loaded = { exports: {} }; cache.set(absolute, loaded);
   const code = ts.transpileModule(readFileSync(absolute, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
   const localRequire = (name) => {
+    if (name.endsWith(".css")) return {};
     if (mocks[name]) return mocks[name];
     let target = name.startsWith("@/") ? resolve(root, "src", name.slice(2)) : name.startsWith(".") ? resolve(dirname(absolute), name) : null;
     if (!target) return require(name);
@@ -86,6 +91,12 @@ function load(file) {
 }
 const actions = load("src/server/actions.ts"), market = load("src/server/market.ts"), history = load("src/server/history.ts"), messaging = load("src/server/history-actions.ts"), media = load("src/app/api/media/[key]/route.ts");
 const { ART_FORMS } = load("src/contract/artForms.ts"), { seedSamples } = load("src/server/samples.ts");
+const { directoryFilters } = load("src/lib/directory-filters.ts");
+assert.equal(directoryFilters(ART_FORMS, {}).status, "");
+assert.equal(directoryFilters(ART_FORMS, { status: "finding" }).status, "finding");
+assert.equal(directoryFilters(ART_FORMS, { status: "done" }).status, "done");
+assert.equal(directoryFilters(ART_FORMS, { status: "progress" }).status, "");
+const renderHistoryDetail = async (id) => renderToStaticMarkup(await load("src/app/profile/history/[id]/page.tsx").default({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) }));
 const impactMetrics = async () => {
   const html = renderToStaticMarkup(await load("src/app/impact/page.tsx").default());
   assert(!/Completion rate|Demands completed|Accepted work|accepted work/i.test(html));
@@ -109,7 +120,7 @@ const impact = async () => {
 for (const form of ART_FORMS) await q("INSERT INTO forms(id,category,name,hi) VALUES($1,$2,$3,$4)", [form.id, form.category, form.name, form.hi]);
 const beforeSamples = await impactMetrics();
 await seedSamples(q); await seedSamples(q);
-// The catalogue has 34 completed, 4 in-progress and 6 Finding sample demands.
+// The catalogue has 38 accepted demands (34 submitted, 4 awaiting upload) and 6 pending selection.
 const sampleImpact = { posted: 44, selected: 38, artists: 17, customers: 9, fees: 406800, finding: 6 };
 const withSamples = await impactMetrics();
 for (const key of ["posted", "selected", "artists", "customers", "fees", "finding"])
@@ -124,7 +135,11 @@ assert((await market.artists()).filter((a) => a.sample).every((a) => a.rating_co
 assert.equal((await q("SELECT COUNT(*) AS n FROM works WHERE url LIKE '/seed/%'"))[0].n, 0);
 assert((await market.commissions()).some((c) => c.status === "finding"));
 assert(!(await market.commissions()).some((c) => c.status === "progress"));
+assert.equal((await market.commissions()).filter((c) => c.sample).length, 44);
+assert.equal((await q("SELECT COUNT(*) AS n FROM demands WHERE sample=1 AND status='done' AND output='' AND submitted_at=0"))[0].n, 4);
 assert((await market.artists()).some((a) => a.sample && a.completed > 0));
+assert.equal((await q("SELECT COUNT(*) AS n FROM accounts WHERE sample=1 AND TRIM(contact)=''"))[0].n, 0);
+await checkSampleContacts(q, seedSamples);
 
 const pw = await hash("example-pass");
 for (const [id, role] of [["customer", "customer"], ["other-customer", "customer"], ["artist", "artist"], ["other-artist", "artist"]])
@@ -200,6 +215,9 @@ assert.equal(await invoke(messaging.markHistoryRead, { id, seenAt: Date.now() })
 await actAs("customer");
 const beforeSelection = await impact();
 assert.equal(await invoke(actions.commissionAction, { id, action: "select", proposal: offer.id, acknowledged: "on" }), "saved");
+assert.equal((await job()).status, "done");
+assert.equal((await job()).output, "");
+assert.equal((await job()).submitted_at, 0);
 assert.equal((await job()).fee, 950);
 assert.equal((await market.commissions({}, id, "customer"))[0].fee, 950);
 assert.equal((await market.commissions({}, id, "artist"))[0].fee, 950);
@@ -210,11 +228,21 @@ assert.equal(await invoke(actions.commissionAction, { id, action: "rate", rating
 assert.equal(await invoke(actions.commissionAction, { id, action: "visibility", public: "on" }), "conflict");
 assert.equal(await invoke(actions.commissionAction, { id, action: "submit", file: new File(["wrong owner"], "painting.png") }), "denied");
 session = null;
-assert.equal((await market.commissions({}, id)).length, 0);
-assert.equal((await media.GET(new Request("http://test"), { params: Promise.resolve({ key: referenceKey }) })).status, 404);
+assert.equal((await market.commissions({}, id)).length, 1);
+assert.equal((await market.commissions({}, id))[0].fee, 1000);
+assert.equal((await market.commissions({}, id))[0].output, "");
+assert.equal((await media.GET(new Request("http://test"), { params: Promise.resolve({ key: referenceKey }) })).status, 200);
 await actAs("artist");
 assert.equal(await invoke(actions.deleteAccount, { current: "example-pass", confirm: "DELETE" }), "active");
 assert.equal((await market.artists()).find((a) => a.id === "artist").completed, 0);
+const acceptedHtml = await renderHistoryDetail(id);
+assert(acceptedHtml.includes('name="action" value="submit"'));
+assert(acceptedHtml.includes('state-done">Completed</span>'));
+assert(!acceptedHtml.includes('id="rating"'));
+assert(acceptedHtml.includes('<li class=""><span class="progress-marker">3</span><strong>Work submitted</strong>'));
+const defaultHistoryHtml = renderToStaticMarkup(await load("src/app/profile/history/page.tsx").default({ searchParams: Promise.resolve({}) }));
+assert(defaultHistoryHtml.includes('/profile/history/' + id));
+assert(/<a\b[^>]*aria-current="page"[^>]*>All activity<\/a>/.test(defaultHistoryHtml));
 await actAs("other-artist");
 assert.equal((await history.historyDetail(id, "other-artist")).commission.output, "");
 assert.equal((await history.historyDetail(id, "other-artist")).messages.length, 0);
@@ -251,6 +279,7 @@ assert.equal((await job()).legacy_accepted_at, 0);
 assert.equal(await invoke(actions.commissionAction, { id, action: "submit", file: new File(["duplicate"], "painting.png") }), "denied");
 await actAs("customer");
 assert.equal(await invoke(actions.commissionAction, { id, action: "accept" }), "conflict");
+assert((await renderHistoryDetail(id)).includes('id="rating"'));
 assert.equal(await invoke(actions.commissionAction, { id, action: "cancel", reason: "Already submitted" }), "conflict");
 assert.equal((await q("SELECT COUNT(*) AS n FROM demand_events WHERE demand=$1 AND kind='accepted'", [id]))[0].n, 0);
 assert.equal((await market.artists()).find((a) => a.id === "other-artist").completed, 1);
